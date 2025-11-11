@@ -1,0 +1,94 @@
+# =========================
+#   Visual Studio / C++
+# =========================
+
+## Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+*.exe
+*.dll
+*.lib
+*.pdb
+*.idb
+*.ilk
+*.obj
+*.pch
+*.sbr
+
+## Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build system files
+*.aps
+*.ncb
+*.opendb
+*.cache
+*.tlog
+*.lastbuildstate
+*.manifest
+
+## Intermediate & temporary files
+*.tmp
+*.log
+*.vspscc
+*_i.c
+*_p.c
+*.ipch
+*.db
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.VC.opendb
+
+## Generated files
+*.dll
+*.exe
+*.out
+*.app
+*.so
+*.dylib
+
+## Backup / autosave files
+*~
+*.bak
+*.swp
+*.old
+
+## Packages & dependencies
+packages/
+*.nuget.props
+*.nuget.targets
+
+## CMake (if used)
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+build/
+out/
+*.dir/
+
+## Editor configs
+.vscode/
+.idea/
+*.code-workspace
+
+## OS-specific
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
