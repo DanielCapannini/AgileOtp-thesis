@@ -579,7 +579,7 @@ int CplexObj::CuttingPlane(long n, long m, double* u, double* p, double* pmax,
 
 	// Set up to use MIP callback 
 	//status = CPXsetcutcallbackfunc (env, mycutcallback, &cutinfo);
-	status = CPXXcallbacksetfunc(env, lp, myNewcutcallback, &cutinfo);
+	status = CPXcallbacksetfunc(env, lp, myNewcutcallback, &cutinfo);
     if (status) goto TERMINATE;
 
 TERMINATE:
