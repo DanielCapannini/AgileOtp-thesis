@@ -14,6 +14,7 @@
 #include <math.h>
 #include "CplexObj.h"
 //#include "Knapsack.h"
+#include <ilcplex/cplex.h>
 
 //-----------------------------------------------------------------------------
 //  Constructor                                    
@@ -578,8 +579,8 @@ int CplexObj::CuttingPlane(long n, long m, double* u, double* p, double* pmax,
 
 	// Set up to use MIP callback 
 	//status = CPXsetcutcallbackfunc (env, mycutcallback, &cutinfo);
-	status = CPXsetcutcallbackfunc (env, myNewcutcallback, &cutinfo);
-	if ( status )  goto TERMINATE;
+	status = CPXXcallbacksetfunc(env, lp, myGenericCallback, &cutinfo);
+    if (status) goto TERMINATE;
 
 TERMINATE:
 
@@ -849,6 +850,7 @@ TERMINATE:
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
 //
+/*
 static int CPXPUBLIC myNewcutcallback (CPXCENVptr env,
                void       *cbdata,
                int        wherefrom,
@@ -1001,6 +1003,166 @@ TERMINATE:
 	return (status);
 
 } 
+*/
+
+
+int CPXPUBLIC myGenericCallback(CPXCALLBACKCONTEXTptr context, void *cbhandle) {
+    CUTINFOptr cutinfo = (CUTINFOptr)cbhandle;
+    int status = 0;
+
+    // Assicurati che il callback sia invocato nel giusto contesto (relaxation context = separazione cut)
+    int wherefrom = 0;
+    status = CPXcallbackgetinfotype(context, &wherefrom); // Questo restituisce informazioni di contesto
+
+    // Esegui le elaborazioni solo se sei nel contesto di rilassamento LP (equivale al vecchio cut callback)
+    if (status == 0 && (wherefrom & CPX_CALLBACKCONTEXT_RELAXATION)) {
+        /* Recupera la soluzione corrente */
+        int numcols = cutinfo->numcols;
+        status = CPXcallbackgetrelaxationpoint(context, cutinfo->x, 0, numcols - 1, NULL);
+        if (status) {
+            fprintf(stderr, "Failed to get node solution.\n");
+            return status;
+        }
+
+        int BolAdd = 0;
+        char sense = 'G';
+        int purgeable = 0;
+
+        //!!!--- Logica per OR_AND / Precedence / Cover inequalities identica alla tua funzione ---!!!
+
+		BolAdd = OR_AND_Inequalities(cutinfo);
+		if (BolAdd)
+		{
+			sense = 'G';
+			purgeable = 0;
+			goto AddCut;
+		}
+
+		if (cutinfo->Pred)
+		{
+			BolAdd = Precedence_Inequalities(cutinfo);
+			if (BolAdd)
+			{
+				sense = 'L';
+				purgeable = 1;
+				goto AddCut;
+			}
+			BolAdd = Precedence_Inequalities_2Item(cutinfo);
+			if (BolAdd)
+			{
+				sense = 'L';
+				purgeable = 1;
+				goto AddCut;
+			}
+			//BolAdd = Precedence_Inequalities_2ItemRev(cutinfo);
+			if (BolAdd)
+			{
+				sense = 'L';
+				purgeable = 1;
+				goto AddCut;
+			}
+			BolAdd = Precedence_Inequalities_3Item(cutinfo);
+			if (BolAdd)
+			{
+				sense = 'L';
+				purgeable = 1;
+				goto AddCut;
+			}
+			//BolAdd = Precedence_Inequalities_3ItemRev(cutinfo);
+			if (BolAdd)
+			{
+				sense = 'L';
+				purgeable = 1;
+				goto AddCut;
+			}
+		}
+		if (cutinfo->Cover)
+		{
+			if (cutinfo->KnapSol==0)
+				BolAdd = Cover_Inequalities(cutinfo);
+			else
+			{
+				cutinfo->FlagLP=1;
+
+				param=CPX_PARAM_SCRIND;ivalue=0;
+				status = CPXsetintparam (cutinfo->env, param, ivalue);
+				if (status>0) return 1;
+
+				param=CPX_PARAM_MIPDISPLAY;ivalue=0;
+				status = CPXsetintparam (cutinfo->env, param, ivalue);
+				if (status>0) return 1;
+
+				BolAdd = Cover_InequalitiesCplex(cutinfo);
+
+				param=CPX_PARAM_SCRIND;ivalue=1;
+				status = CPXsetintparam (cutinfo->env, param, ivalue);
+				if (status>0) return 1;
+
+				param=CPX_PARAM_MIPDISPLAY;ivalue=2;
+				status = CPXsetintparam (cutinfo->env, param, ivalue);
+				if (status>0) return 1;
+
+				cutinfo->FlagLP=0;
+			}
+			if (BolAdd)
+			{
+				sense = 'L';
+				purgeable = 1;
+				goto AddCut;
+			}
+		}
+
+        if (cutinfo->FlagLP)
+            return (status);
+
+        if (cutinfo->numtoadd > cutinfo->maxcuts)
+            return (status);
+
+        // OR_AND inequalities
+        BolAdd = OR_AND_Inequalities(cutinfo);
+        if (BolAdd) {
+            sense = 'G';
+            purgeable = 0;
+        }
+        // Precedence inequalities
+        else if (cutinfo->Pred) {
+            BolAdd = Precedence_Inequalities(cutinfo);
+            if (!BolAdd) BolAdd = Precedence_Inequalities_2Item(cutinfo);
+            if (!BolAdd) BolAdd = Precedence_Inequalities_3Item(cutinfo);
+            if (BolAdd) {
+                sense = 'L';
+                purgeable = 1;
+            }
+        }
+        // Cover inequalities
+        else if (cutinfo->Cover) {
+            if (cutinfo->KnapSol == 0)
+                BolAdd = Cover_Inequalities(cutinfo);
+            else {
+                // Qui puoi gestire condizioni speciali come nella versione originale
+            }
+            if (BolAdd) {
+                sense = 'L';
+                purgeable = 1;
+            }
+        }
+
+        // Se devi aggiungere un taglio:
+        if (BolAdd == 1) {
+            cutinfo->numtoadd++;
+            cutinfo->Cuts[0]++;
+
+            // Nota bene: In CPLEX moderno per i user cuts bisogna usare CPXcallbackaddusercuts
+            status = CPXcallbackaddusercuts(context, cutinfo->nz, 1, cutinfo->rhs, &sense,
+                                            cutinfo->val, cutinfo->ind, NULL, &purgeable);
+            if (status) fprintf(stderr, "Failed to add cut.\n");
+            // Non serve più *useraction_p: se status == 0, la callback ha aggiunto un vincolo
+        }
+    }
+
+    return status;
+}
+
 
 
 //-----------------------------------------------------------------------------
