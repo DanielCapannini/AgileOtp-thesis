@@ -694,7 +694,9 @@ int CplexObj::CuttingPlaneHeu(long n, long m, double* u, double* p, double* pmax
 
 	// Set up to use MIP callback 
 	//status = CPXsetcutcallbackfunc (env, mycutcallback, &cutinfo);
-	status = CPXsetcutcallbackfunc (env, myHeucutcallback, &cutinfo);
+	//status = CPXsetcutcallbackfunc (env, myHeucutcallback, &cutinfo);
+	CPXLONG contextmask = CPX_CALLBACKCONTEXT_RELAXATION; // Solo separazione cut su LP relaxation
+	status = CPXcallbacksetfunc(env, lp, contextmask, myHeuCutGenericCallback, &cutinfo);
 	if ( status )  goto TERMINATE;
 
 TERMINATE:
@@ -1170,6 +1172,7 @@ int CPXPUBLIC myNewcutcallback(CPXCALLBACKCONTEXTptr context, void *cbhandle) {
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
 //
+/*
 static int CPXPUBLIC myHeucutcallback (CPXCENVptr env,
                void       *cbdata,
                int        wherefrom,
@@ -1241,6 +1244,49 @@ TERMINATE:
 	return (status);
 
 } 
+*/	
+
+int CPXPUBLIC myHeuCutGenericCallback(CPXCALLBACKCONTEXTptr context, void *userhandle)
+{
+    CUTINFOptr cutinfo = (CUTINFOptr) userhandle;
+    int status = 0;
+    long i;
+    int BolAdd = 0;
+    char sense[1] = {'G'};
+    int purgeable[1] = {0};
+    int rowbeg[1] = {0}; // Serve per definire la struttura dei tagli aggiunti
+
+    // Recupera la soluzione corrente del rilassamento LP
+    status = CPXcallbackgetrelaxationpoint(context, cutinfo->x, 0, cutinfo->numcols - 1, NULL);
+    if (status) {
+        fprintf(stderr, "Failed to get node solution.\n");
+        return status;
+    }
+
+    // Esegui la logica di separazione dei tagli (Heuristics OR_AND)
+    BolAdd = OR_AND_InequalitiesHeu(cutinfo);
+
+    // Se è stato trovato un taglio, aggiungilo
+    if (BolAdd == 1) {
+        cutinfo->numtoadd++;
+        cutinfo->Cuts[0]++;
+        if ((cutinfo->numtoadd % 1000) == 0)
+            printf("\n  User Cuts added: %ld\n\n", cutinfo->numtoadd);
+
+        // Aggiungi il taglio tramite la nuova API generica
+        status = CPXcallbackaddusercuts(context, cutinfo->nz, 1, cutinfo->rhs,
+                                        sense, cutinfo->val, cutinfo->ind,
+                                        rowbeg, purgeable);
+        if (status) {
+            fprintf(stderr, "Failed to add cut.\n");
+            return status;
+        }
+        // Non serve *useraction_p, la funzione API gestisce il trigger
+    }
+
+    return status;
+}
+
 
 
 //-----------------------------------------------------------------------------
