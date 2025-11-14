@@ -14,7 +14,6 @@
 #include <math.h>
 #include "CplexObj.h"
 //#include "Knapsack.h"
-#include <ilcplex/cplex.h>
 
 //-----------------------------------------------------------------------------
 //  Constructor                                    
@@ -34,7 +33,7 @@ CplexObj::CplexObj(void)
 		return;
 	}
 
-	lp = CPXcreateprob(env,&status,"lp");
+	lp = CPXcreateprob(env, &status, "lp");
 	if (status)
 	{
 		printf("\nError... CPXcreateprob...\n");
@@ -42,29 +41,29 @@ CplexObj::CplexObj(void)
 		return;
 	}
 
-	param=CPX_PARAM_DATACHECK;
-	ivalue=1;
+	param = CPX_PARAM_DATACHECK;
+	ivalue = 1;
 	//ivalue=0;
-	status = CPXsetintparam (env, param, ivalue);
-	if (status>0) return;
+	status = CPXsetintparam(env, param, ivalue);
+	if (status > 0) return;
 
-	param=CPX_PARAM_SCRIND;
-	ivalue=1;
+	param = CPX_PARAM_SCRIND;
+	ivalue = 1;
 	// ivalue=0;
-	status = CPXsetintparam (env, param, ivalue);
-	if (status>0) return;
+	status = CPXsetintparam(env, param, ivalue);
+	if (status > 0) return;
 
-	param=CPX_PARAM_MIPDISPLAY;
-	ivalue=2;
+	param = CPX_PARAM_MIPDISPLAY;
+	ivalue = 2;
 	// ivalue=0;
-	status = CPXsetintparam (env, param, ivalue);
-	if (status>0) return;
+	status = CPXsetintparam(env, param, ivalue);
+	if (status > 0) return;
 
-	param=CPX_PARAM_SIMDISPLAY;
+	param = CPX_PARAM_SIMDISPLAY;
 	//ivalue=2;
-	ivalue=0;
-	status = CPXsetintparam (env, param, ivalue);
-	if (status>0) return;
+	ivalue = 0;
+	status = CPXsetintparam(env, param, ivalue);
+	if (status > 0) return;
 
 	minmax = 1;     // Default: minimize
 	ncols = 0;      // Number of columns/variables
@@ -99,11 +98,11 @@ CplexObj::CplexObj(void)
 	// Data structure used to add cutting planes
 	cutinfo.FlagLP = 0;
 	cutinfo.env = env;
-	cutinfo.lp  = lp;
+	cutinfo.lp = lp;
 	cutinfo.lpkp = NULL;
-	cutinfo.x   = NULL;
+	cutinfo.x = NULL;
 	cutinfo.beg = NULL;
-	cutinfo.ind = NULL; 
+	cutinfo.ind = NULL;
 	cutinfo.val = NULL;
 	cutinfo.rhs = NULL;
 	cutinfo.Flag2I = NULL;
@@ -123,7 +122,7 @@ CplexObj::CplexObj(void)
 //
 CplexObj::~CplexObj(void)
 {
-	long i,j;
+	long i, j;
 
 	//status = CPXwriteprob(env,lp,"myprob.lp","LP");
 
@@ -174,42 +173,42 @@ CplexObj::~CplexObj(void)
 
 	free(cutinfo.x);
 	free(cutinfo.beg);
-	free(cutinfo.ind); 
+	free(cutinfo.ind);
 	free(cutinfo.val);
 	free(cutinfo.rhs);
 
-	if (cutinfo.Tupla2I!=NULL)
+	if (cutinfo.Tupla2I != NULL)
 	{
-		for (i=0; i<cutinfo.n; i++)
-			if (cutinfo.Tupla2I[i]!=NULL)
+		for (i = 0; i < cutinfo.n; i++)
+			if (cutinfo.Tupla2I[i] != NULL)
 				free(cutinfo.Tupla2I[i]);
 		free(cutinfo.Tupla2I);
 	}
-	if (cutinfo.Tupla3I!=NULL)
+	if (cutinfo.Tupla3I != NULL)
 	{
-		for (i=0; i<cutinfo.n; i++)
-			if (cutinfo.Tupla3I[i]!=NULL)
+		for (i = 0; i < cutinfo.n; i++)
+			if (cutinfo.Tupla3I[i] != NULL)
 				free(cutinfo.Tupla3I[i]);
 		free(cutinfo.Tupla3I);
 	}
-	if (cutinfo.Tupla2IRev!=NULL)
+	if (cutinfo.Tupla2IRev != NULL)
 	{
-		for (i=0; i<cutinfo.n; i++)
-			if (cutinfo.Tupla2IRev[i]!=NULL)
+		for (i = 0; i < cutinfo.n; i++)
+			if (cutinfo.Tupla2IRev[i] != NULL)
 				free(cutinfo.Tupla2IRev[i]);
 		free(cutinfo.Tupla2IRev);
 	}
-	if (cutinfo.Tupla3IRev!=NULL)
+	if (cutinfo.Tupla3IRev != NULL)
 	{
-		for (i=0; i<cutinfo.n; i++)
-			if (cutinfo.Tupla3IRev[i]!=NULL)
+		for (i = 0; i < cutinfo.n; i++)
+			if (cutinfo.Tupla3IRev[i] != NULL)
 				free(cutinfo.Tupla3IRev[i]);
 		free(cutinfo.Tupla3IRev);
 	}
-	if (cutinfo.Flag2I!=NULL) free(cutinfo.Flag2I);
-	if (cutinfo.Flag3I!=NULL) free(cutinfo.Flag3I);
-	if (cutinfo.Flag2IRev!=NULL) free(cutinfo.Flag2IRev);
-	if (cutinfo.Flag3IRev!=NULL) free(cutinfo.Flag3IRev);
+	if (cutinfo.Flag2I != NULL) free(cutinfo.Flag2I);
+	if (cutinfo.Flag3I != NULL) free(cutinfo.Flag3I);
+	if (cutinfo.Flag2IRev != NULL) free(cutinfo.Flag2IRev);
+	if (cutinfo.Flag3IRev != NULL) free(cutinfo.Flag3IRev);
 
 }
 
@@ -220,25 +219,25 @@ CplexObj::~CplexObj(void)
 //
 int CplexObj::MallocCols(void)
 {
-	obj = (double*)malloc(ncols*sizeof(double));
-	rhs = (double*)malloc(nrows*sizeof(double));
-	sense = (char*)malloc(nrows*sizeof(char));
-	matbeg = (int*)malloc((ncols+4)*sizeof(int));
-	matcnt = (int*)malloc((ncols+4)*sizeof(int));
-	matind = (int*)malloc(nz*sizeof(int));          
-	matval = (double*)malloc(nz*sizeof(double));       
-	lb = (double*)malloc(ncols*sizeof(double));
-	ub = (double*)malloc(ncols*sizeof(double));
-	xt = (double*)malloc(ncols*sizeof(double));
-	indices = (int*)malloc((ncols+4)*sizeof(int));
-	priority = (int*)malloc((ncols+4)*sizeof(int));
-	direction = (int*)malloc((ncols+4)*sizeof(int));
-	xctype = (char*)malloc((ncols+4)*sizeof(char));
+	obj = (double*)malloc(ncols * sizeof(double));
+	rhs = (double*)malloc(nrows * sizeof(double));
+	sense = (char*)malloc(nrows * sizeof(char));
+	matbeg = (int*)malloc((ncols + 4) * sizeof(int));
+	matcnt = (int*)malloc((ncols + 4) * sizeof(int));
+	matind = (int*)malloc(nz * sizeof(int));
+	matval = (double*)malloc(nz * sizeof(double));
+	lb = (double*)malloc(ncols * sizeof(double));
+	ub = (double*)malloc(ncols * sizeof(double));
+	xt = (double*)malloc(ncols * sizeof(double));
+	indices = (int*)malloc((ncols + 4) * sizeof(int));
+	priority = (int*)malloc((ncols + 4) * sizeof(int));
+	direction = (int*)malloc((ncols + 4) * sizeof(int));
+	xctype = (char*)malloc((ncols + 4) * sizeof(char));
 
-	typesos = (char*)malloc(nsos*sizeof(char));
-	sosbeg = (int*)malloc((nsos+4)*sizeof(int));
-	sosind = (int*)malloc(ncols*sizeof(int));
-	soswt = (double*)malloc(ncols*sizeof(double));
+	typesos = (char*)malloc(nsos * sizeof(char));
+	sosbeg = (int*)malloc((nsos + 4) * sizeof(int));
+	sosind = (int*)malloc(ncols * sizeof(int));
+	soswt = (double*)malloc(ncols * sizeof(double));
 
 	return 0;
 }
@@ -251,10 +250,10 @@ int CplexObj::MallocCols(void)
 int CplexObj::CopyLP(void)
 {
 	// Load the LP instance
-    status = CPXcopylp(env,lp,ncols,nrows,objsen,obj,rhs,sense,matbeg,matcnt,matind,matval,lb,ub,rngval);
+	status = CPXcopylp(env, lp, ncols, nrows, objsen, obj, rhs, sense, matbeg, matcnt, matind, matval, lb, ub, rngval);
 
 	// Set problem: minimization or maximization
-	CPXchgobjsen (env,lp,minmax);
+	CPXchgobjsen(env, lp, minmax);
 
 	return status;
 }
@@ -271,8 +270,8 @@ int CplexObj::SetLB(double LB)
 
 	// Set Parameter
 	Param = CPX_PARAM_CUTLO;
-	DValue = LB-1.;
-	status = CPXsetdblparam (env,Param,DValue);
+	DValue = LB - 1.;
+	status = CPXsetdblparam(env, Param, DValue);
 
 	return 0;
 }
@@ -289,19 +288,19 @@ int CplexObj::SetMIP(double TLim)
 	double DValue;
 
 	// Change the problem from LP to MIP
-	status = CPXchgprobtype(env,lp,CPXPROB_MILP);
+	status = CPXchgprobtype(env, lp, CPXPROB_MILP);
 
 	// Charge the variable type (the default is "continuous")
-	status = CPXchgctype(env,lp,ncols,indices,xctype);
+	status = CPXchgctype(env, lp, ncols, indices, xctype);
 
 	// Set Parameter
-	Param=CPX_PARAM_TILIM;
-	DValue=TLim;
-	status = CPXsetdblparam (env,Param,DValue);
+	Param = CPX_PARAM_TILIM;
+	DValue = TLim;
+	status = CPXsetdblparam(env, Param, DValue);
 
-	Param=CPX_PARAM_EPAGAP;
-	DValue=1.0e-15;
-	status = CPXsetdblparam (env,Param,DValue);
+	Param = CPX_PARAM_EPAGAP;
+	DValue = 1.0e-15;
+	status = CPXsetdblparam(env, Param, DValue);
 
 	// Load SOS 
 	//status = CPXaddsos(env,lp,nsos,nsosnz,typesos,sosbeg,sosind,soswt,NULL);
@@ -312,7 +311,7 @@ int CplexObj::SetMIP(double TLim)
 	// Set Parameter
 	Param = CPX_PARAM_COVERS;
 	Value = 0;
-	status = CPXsetintparam (env,Param,Value);
+	status = CPXsetintparam(env, Param, Value);
 
 	// Cuts Factor
 	//Param = CPX_PARAM_CUTSFACTOR;
@@ -329,61 +328,61 @@ int CplexObj::SetMIP(double TLim)
 //
 int CplexObj::Sentinel(long n, long m)
 {
-	int i,j,k,k1;
-	int *beg=NULL;
-	int *ind=NULL;
-	char *sense=NULL;
-	double *rhs=NULL;
-	double *val=NULL;
+	int i, j, k, k1;
+	int* beg = NULL;
+	int* ind = NULL;
+	char* sense = NULL;
+	double* rhs = NULL;
+	double* val = NULL;
 	double rr;
 
 	// Build the Integer Sentinel Costraint
-	ind = (int *) malloc (ncols * sizeof (int));		if (ind==NULL) goto ESCI; 
-	val = (double *) malloc (ncols * sizeof (double));	if (val==NULL) goto ESCI;
-	beg = (int *) malloc ((m+4) * sizeof (int));			if (beg==NULL) goto ESCI;
-	sense = (char *) malloc (m * sizeof (char));		if (sense==NULL) goto ESCI;
-	rhs = (double *) malloc (m * sizeof (double));		if (rhs==NULL) goto ESCI;
+	ind = (int*)malloc(ncols * sizeof(int));		if (ind == NULL) goto ESCI;
+	val = (double*)malloc(ncols * sizeof(double));	if (val == NULL) goto ESCI;
+	beg = (int*)malloc((m + 4) * sizeof(int));			if (beg == NULL) goto ESCI;
+	sense = (char*)malloc(m * sizeof(char));		if (sense == NULL) goto ESCI;
+	rhs = (double*)malloc(m * sizeof(double));		if (rhs == NULL) goto ESCI;
 
 	//srand(0);
 
-	k=0;
-	for (i=0; i<m; i++)
+	k = 0;
+	for (i = 0; i < m; i++)
 	{
-		rhs[i]=0.0;
-		sense[i]='E';
-		beg[i]=k;
-		for (j=0; j<n; j++)
+		rhs[i] = 0.0;
+		sense[i] = 'E';
+		beg[i] = k;
+		for (j = 0; j < n; j++)
 		{
-			k1=i*n+j;
+			k1 = i * n + j;
 			//rr = (double)rand()/RAND_MAX;
 			//rr = 1;
 			//if ((xctype[k1]=='B')&&(rr<0.5))
-			if (xctype[k1]=='B')
+			if (xctype[k1] == 'B')
 			{
-				ind[k]=indices[k1];
-				val[k]=1.0;
+				ind[k] = indices[k1];
+				val[k] = 1.0;
 				k++;
 			}
 		}
-		ind[k]=ncols;
-		val[k]=-1.0;
+		ind[k] = ncols;
+		val[k] = -1.0;
 		k++;
-		indices[ncols]=ncols;
-		priority[ncols]=1000;
+		indices[ncols] = ncols;
+		priority[ncols] = 1000;
 		//direction[ncols]=CPX_BRANCH_GLOBAL;
-		direction[ncols] = CPX_BRANCH_DOWN; 
-		xctype[ncols]='I';
+		direction[ncols] = CPX_BRANCH_DOWN;
+		xctype[ncols] = 'I';
 		ncols++;
 	}
-	beg[m]=k;
+	beg[m] = k;
 
 	// Load the Integer Sentinel Constraints
-	status = CPXaddrows(env,lp,m,m,k,rhs,sense,beg,ind,val,NULL,NULL);
+	status = CPXaddrows(env, lp, m, m, k, rhs, sense, beg, ind, val, NULL, NULL);
 
 	goto TERMINATE;
 
 ESCI:
-	fprintf (stderr, "No memory for solution values.\n");
+	fprintf(stderr, "No memory for solution values.\n");
 
 TERMINATE:
 	free(beg);
@@ -400,7 +399,7 @@ TERMINATE:
 //  SolveMIP
 //-----------------------------------------------------------------------------
 //
-int CplexObj::SolveMIP(double *Zopt, double *Gap, long *Nodes, long *Cuts)
+int CplexObj::SolveMIP(double* Zopt, double* Gap, long* Nodes, long* Cuts)
 {
 	int ncuts;
 	double RGap;
@@ -410,33 +409,33 @@ int CplexObj::SolveMIP(double *Zopt, double *Gap, long *Nodes, long *Cuts)
 
 	//status = CPXwriteprob(env,lp,"myprob.lp","LP");
 
-	status = CPXmipopt(env,lp);
+	status = CPXmipopt(env, lp);
 
-	status = CPXgetstat(env,lp);
+	status = CPXgetstat(env, lp);
 	//if ((status!=CPXMIP_OPTIMAL)&&(status!=CPXMIP_OPTIMAL_TOL)&&(status!=CPXMIP_TIME_LIM_FEAS)) // Cplex 11.2
-	if ((status!=CPXMIP_OPTIMAL)&&(status!=CPXMIP_OPTIMAL_TOL)&&(status!=CPXMIP_FEASIBLE)&&(status!=CPXMIP_TIME_LIM_FEAS)) // Cplex 12.2
+	if ((status != CPXMIP_OPTIMAL) && (status != CPXMIP_OPTIMAL_TOL) && (status != CPXMIP_FEASIBLE) && (status != CPXMIP_TIME_LIM_FEAS)) // Cplex 12.2
 	{
-		printf("Non Ammissibile...\n",status);
-		objval=+0.0;
-		RGap=1.0;
+		printf("Non Ammissibile...\n", status);
+		objval = +0.0;
+		RGap = 1.0;
 		goto TERMINATE;
 	}
 
 	// Read the solution
-	status = CPXgetobjval(env,lp,&objval);
-  	status = CPXgetx(env,lp,xt,0,ncols-1);
-	status = CPXgetmiprelgap(env,lp,&RGap);
+	status = CPXgetobjval(env, lp, &objval);
+	status = CPXgetx(env, lp, xt, 0, ncols - 1);
+	status = CPXgetmiprelgap(env, lp, &RGap);
 
 TERMINATE:
 
 	// Ouput
 	*Zopt = objval;
 	*Gap = RGap * 100.;
-	*Nodes = CPXgetnodecnt(env,lp);
-	status = CPXgetnumcuts(env,lp,CPX_CUT_USER,&ncuts);
+	*Nodes = CPXgetnodecnt(env, lp);
+	status = CPXgetnumcuts(env, lp, CPX_CUT_USER, &ncuts);
 	//status = CPXgetnumcuts(env,lp,CPX_CUT_COVER,&ncuts);
 	//*Cuts = ncuts;
-	
+
 	return status;
 }
 
@@ -445,36 +444,36 @@ TERMINATE:
 //  Setup Custom Cutting Plane
 //-----------------------------------------------------------------------------
 //
-int CplexObj::CuttingPlane(long n, long m, double* u, double* p, double* pmax, 
-	                       long *nY, long **Y, long *nUOR, long **UOR, long *nUAND, long **UAND, long *FDepA, long *FDepP,
-	                       int Pred, int Cover, int Lifting, int KnapSol, int MaxCuts, long *Cuts)
+int CplexObj::CuttingPlane(long n, long m, double* u, double* p, double* pmax,
+	long* nY, long** Y, long* nUOR, long** UOR, long* nUAND, long** UAND, long* FDepA, long* FDepP,
+	int Pred, int Cover, int Lifting, int KnapSol, int MaxCuts, long* Cuts)
 {
 	long cur_numcols;
 
 	// Set parameters
 
 	// Assure linear mappings between the presolved and original models 
-	status = CPXsetintparam (env, CPX_PARAM_PRELINEAR, 0);
-	if ( status )  goto TERMINATE;
-   
+	status = CPXsetintparam(env, CPX_PARAM_PRELINEAR, 0);
+	if (status)  goto TERMINATE;
+
 	// Turn on traditional search for use with control callbacks 
-	status = CPXsetintparam (env, CPX_PARAM_MIPSEARCH, CPX_MIPSEARCH_TRADITIONAL);
-	if ( status )  goto TERMINATE;
+	status = CPXsetintparam(env, CPX_PARAM_MIPSEARCH, CPX_MIPSEARCH_TRADITIONAL);
+	if (status)  goto TERMINATE;
 
 	// Let MIP callbacks work on the original model
-	status = CPXsetintparam (env, CPX_PARAM_MIPCBREDLP, CPX_OFF);
-	if ( status )  goto TERMINATE;
+	status = CPXsetintparam(env, CPX_PARAM_MIPCBREDLP, CPX_OFF);
+	if (status)  goto TERMINATE;
 
 	// Let MIP do not reduce LP
-	status = CPXsetintparam (env, CPX_PARAM_REDUCE, CPX_PREREDUCE_NOPRIMALORDUAL);
-	if ( status )  goto TERMINATE;
+	status = CPXsetintparam(env, CPX_PARAM_REDUCE, CPX_PREREDUCE_NOPRIMALORDUAL);
+	if (status)  goto TERMINATE;
 
 	// Let MIP do not presolve MIP
 	//status = CPXsetintparam (env, CPX_PARAM_PREIND, CPX_OFF);
 	//if ( status )  goto TERMINATE;
 
-	*Cuts=0;
-	cur_numcols = CPXgetnumcols (env, lp);
+	*Cuts = 0;
+	cur_numcols = CPXgetnumcols(env, lp);
 	cutinfo.FlagLP = 0;
 	cutinfo.lp = lp;
 	cutinfo.lpkp = NULL;
@@ -500,89 +499,87 @@ int CplexObj::CuttingPlane(long n, long m, double* u, double* p, double* pmax,
 	cutinfo.Lifting = Lifting;
 	cutinfo.KnapSol = KnapSol;
 
-	cutinfo.x = (double *) malloc (cur_numcols * sizeof (double));
-	if ( cutinfo.x == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.x = (double*)malloc(cur_numcols * sizeof(double));
+	if (cutinfo.x == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.ind = (int *) malloc (cur_numcols * sizeof (int));
-	if ( cutinfo.ind == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.ind = (int*)malloc(cur_numcols * sizeof(int));
+	if (cutinfo.ind == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.val = (double *) malloc (cur_numcols * sizeof (double));
-	if ( cutinfo.val == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.val = (double*)malloc(cur_numcols * sizeof(double));
+	if (cutinfo.val == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.beg = (int *) malloc (2 * sizeof (int));
-	if ( cutinfo.beg == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.beg = (int*)malloc(2 * sizeof(int));
+	if (cutinfo.beg == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.rhs = (double *) malloc (2 * sizeof (double));
-	if ( cutinfo.rhs == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.rhs = (double*)malloc(2 * sizeof(double));
+	if (cutinfo.rhs == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.Flag2I = (int *) malloc (n * sizeof (int));
-	if ( cutinfo.Flag2I == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Flag2I = (int*)malloc(n * sizeof(int));
+	if (cutinfo.Flag2I == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.Tupla2I = (struct tupla **) malloc (n * sizeof (struct tupla*));
-	if ( cutinfo.Tupla2I == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Tupla2I = (struct tupla**)malloc(n * sizeof(struct tupla*));
+	if (cutinfo.Tupla2I == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
 	CalcolaFlag2I(&cutinfo);
-	cutinfo.Flag3I = (int *) malloc (n * sizeof (int));
-	if ( cutinfo.Flag3I == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Flag3I = (int*)malloc(n * sizeof(int));
+	if (cutinfo.Flag3I == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.Tupla3I = (struct tupla **) malloc (n * sizeof (struct tupla*));
-	if ( cutinfo.Tupla3I == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Tupla3I = (struct tupla**)malloc(n * sizeof(struct tupla*));
+	if (cutinfo.Tupla3I == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
 	CalcolaFlag3I(&cutinfo);
 
-	cutinfo.Flag2IRev = (int *) malloc (n * sizeof (int));
-	if ( cutinfo.Flag2IRev == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Flag2IRev = (int*)malloc(n * sizeof(int));
+	if (cutinfo.Flag2IRev == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.Tupla2IRev = (struct tupla **) malloc (n * sizeof (struct tupla*));
-	if ( cutinfo.Tupla2IRev == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Tupla2IRev = (struct tupla**)malloc(n * sizeof(struct tupla*));
+	if (cutinfo.Tupla2IRev == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
 	CalcolaFlag2IRev(&cutinfo);
-	cutinfo.Flag3IRev = (int *) malloc (n * sizeof (int));
-	if ( cutinfo.Flag3IRev == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Flag3IRev = (int*)malloc(n * sizeof(int));
+	if (cutinfo.Flag3IRev == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.Tupla3IRev = (struct tupla **) malloc (n * sizeof (struct tupla*));
-	if ( cutinfo.Tupla3IRev == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.Tupla3IRev = (struct tupla**)malloc(n * sizeof(struct tupla*));
+	if (cutinfo.Tupla3IRev == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
 	CalcolaFlag3IRev(&cutinfo);
 
 	// Setup the data structure in Cplex for the Knapsack 
-	if (KnapSol==0)
+	if (KnapSol == 0)
 		SetupKPDP(&cutinfo);
 	else
 		SetupKPMIP(&cutinfo);
 
 	// Set up to use MIP callback 
 	//status = CPXsetcutcallbackfunc (env, mycutcallback, &cutinfo);
-	status = CPXsetusercutcallbackfunc  (env, myNewcutcallback, &cutinfo);
-	//CPXLONG contextmask = CPX_CALLBACKCONTEXT_RELAXATION; // Solo separazione cut su LP relaxation
-	//status = CPXcallbacksetfunc(env, lp, contextmask, myNewcutcallback, &cutinfo);
-    //if (status) goto TERMINATE;
+	status = CPXsetusercutcallbackfunc(env, myNewcutcallback, &cutinfo);
+	if (status)  goto TERMINATE;
 
 TERMINATE:
 
@@ -594,9 +591,9 @@ TERMINATE:
 //  Setup Custom Cutting Plane
 //-----------------------------------------------------------------------------
 //
-int CplexObj::CuttingPlaneHeu(long n, long m, double* u, double* p, double* pmax, 
-  	                          long *nY, long **Y, long *nUOR, long **UOR, long *nUAND, long **UAND, long *FDepA, long *FDepP,
-	                          int Pred, int Cover, int Lifting, int KnapSol, int MaxCuts, long *Cuts, long fact)
+int CplexObj::CuttingPlaneHeu(long n, long m, double* u, double* p, double* pmax,
+	long* nY, long** Y, long* nUOR, long** UOR, long* nUAND, long** UAND, long* FDepA, long* FDepP,
+	int Pred, int Cover, int Lifting, int KnapSol, int MaxCuts, long* Cuts, long fact)
 {
 	long cur_numcols;
 	int param;
@@ -604,44 +601,44 @@ int CplexObj::CuttingPlaneHeu(long n, long m, double* u, double* p, double* pmax
 
 	// Set parameters
 
-	param=CPX_PARAM_SCRIND;
+	param = CPX_PARAM_SCRIND;
 	//ivalue=1;
-	ivalue=0;
-	status = CPXsetintparam (env, param, ivalue);
-	if (status>0) return 1;
+	ivalue = 0;
+	status = CPXsetintparam(env, param, ivalue);
+	if (status > 0) return 1;
 
-	param=CPX_PARAM_MIPDISPLAY;
+	param = CPX_PARAM_MIPDISPLAY;
 	//ivalue=2;
-	ivalue=0;
-	status = CPXsetintparam (env, param, ivalue);
-	if (status>0) return 1;
+	ivalue = 0;
+	status = CPXsetintparam(env, param, ivalue);
+	if (status > 0) return 1;
 
 	// Check if cutting plane must be applied
-	if (fact>0)
+	if (fact > 0)
 		goto TERMINATE;
 
 	// Assure linear mappings between the presolved and original models 
-	status = CPXsetintparam (env, CPX_PARAM_PRELINEAR, 0);
-	if ( status )  goto TERMINATE;
-   
+	status = CPXsetintparam(env, CPX_PARAM_PRELINEAR, 0);
+	if (status)  goto TERMINATE;
+
 	// Turn on traditional search for use with control callbacks 
-	status = CPXsetintparam (env, CPX_PARAM_MIPSEARCH, CPX_MIPSEARCH_TRADITIONAL);
-	if ( status )  goto TERMINATE;
+	status = CPXsetintparam(env, CPX_PARAM_MIPSEARCH, CPX_MIPSEARCH_TRADITIONAL);
+	if (status)  goto TERMINATE;
 
 	// Let MIP callbacks work on the original model
-	status = CPXsetintparam (env, CPX_PARAM_MIPCBREDLP, CPX_OFF);
-	if ( status )  goto TERMINATE;
+	status = CPXsetintparam(env, CPX_PARAM_MIPCBREDLP, CPX_OFF);
+	if (status)  goto TERMINATE;
 
 	// Let MIP do not reduce LP
-	status = CPXsetintparam (env, CPX_PARAM_REDUCE, CPX_PREREDUCE_NOPRIMALORDUAL);
-	if ( status )  goto TERMINATE;
+	status = CPXsetintparam(env, CPX_PARAM_REDUCE, CPX_PREREDUCE_NOPRIMALORDUAL);
+	if (status)  goto TERMINATE;
 
 	// Let MIP do not presolve MIP
 	//status = CPXsetintparam (env, CPX_PARAM_PREIND, CPX_OFF);
 	//if ( status )  goto TERMINATE;
 
-	*Cuts=0;
-	cur_numcols = CPXgetnumcols (env, lp);
+	*Cuts = 0;
+	cur_numcols = CPXgetnumcols(env, lp);
 	cutinfo.FlagLP = 0;
 	cutinfo.lp = lp;
 	cutinfo.lpkp = NULL;
@@ -667,38 +664,36 @@ int CplexObj::CuttingPlaneHeu(long n, long m, double* u, double* p, double* pmax
 	cutinfo.Lifting = Lifting;
 	cutinfo.KnapSol = KnapSol;
 
-	cutinfo.x = (double *) malloc (cur_numcols * sizeof (double));
-	if ( cutinfo.x == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.x = (double*)malloc(cur_numcols * sizeof(double));
+	if (cutinfo.x == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.ind = (int *) malloc (cur_numcols * sizeof (int));
-	if ( cutinfo.ind == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.ind = (int*)malloc(cur_numcols * sizeof(int));
+	if (cutinfo.ind == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.val = (double *) malloc (cur_numcols * sizeof (double));
-	if ( cutinfo.val == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.val = (double*)malloc(cur_numcols * sizeof(double));
+	if (cutinfo.val == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.beg = (int *) malloc (2 * sizeof (int));
-	if ( cutinfo.beg == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.beg = (int*)malloc(2 * sizeof(int));
+	if (cutinfo.beg == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
-	cutinfo.rhs = (double *) malloc (2 * sizeof (double));
-	if ( cutinfo.rhs == NULL ) {
-		fprintf (stderr, "No memory for solution values.\n");
+	cutinfo.rhs = (double*)malloc(2 * sizeof(double));
+	if (cutinfo.rhs == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
 		goto TERMINATE;
 	}
 
 	// Set up to use MIP callback 
 	//status = CPXsetcutcallbackfunc (env, mycutcallback, &cutinfo);
-	status = CPXsetusercutcallbackfunc  (env, myHeucutcallback, &cutinfo);
-	//CPXLONG contextmask = CPX_CALLBACKCONTEXT_RELAXATION; // Solo separazione cut su LP relaxation
-	//status = CPXcallbacksetfunc(env, lp, contextmask, myHeuCutGenericCallback, &cutinfo);
-	//if ( status )  goto TERMINATE;
+	status = CPXsetusercutcallbackfunc(env, myHeucutcallback, &cutinfo);
+	if (status)  goto TERMINATE;
 
 TERMINATE:
 
@@ -710,155 +705,155 @@ TERMINATE:
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
 //
-static int CPXPUBLIC mycutcallback (CPXCENVptr env,
-               void       *cbdata,
-               int        wherefrom,
-               void       *cbhandle,
-               int        *useraction_p)
+static int CPXPUBLIC mycutcallback(CPXCENVptr env,
+	void* cbdata,
+	int        wherefrom,
+	void* cbhandle,
+	int* useraction_p)
 {
-   int status = 0;
+	int status = 0;
 
-   CUTINFOptr cutinfo = (CUTINFOptr) cbhandle;
+	CUTINFOptr cutinfo = (CUTINFOptr)cbhandle;
 
-   int      numcols  = cutinfo->numcols;
-   int      numtoadd = cutinfo->numtoadd;
-   int      numcuts  = cutinfo->num;
-   double   *x       = cutinfo->x;
-   int      *beg     = cutinfo->beg;
-   int      *ind     = cutinfo->ind;
-   double   *val     = cutinfo->val;
-   double   *rhs     = cutinfo->rhs;
-   long     n        = cutinfo->n;
-   long     m        = cutinfo->m;
-   double   cutvio;
-   int      i, j, k, cutnz;
-   long     i1,j1,k1;
+	int      numcols = cutinfo->numcols;
+	int      numtoadd = cutinfo->numtoadd;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
+	double   cutvio;
+	int      i, j, k, cutnz;
+	long     i1, j1, k1;
 
-   *useraction_p = CPX_CALLBACK_DEFAULT; 
+	*useraction_p = CPX_CALLBACK_DEFAULT;
 
-   status = CPXgetcallbacknodex (env,cbdata,wherefrom,x,0,numcols-1); 
-   if (status) 
-   {
-	   fprintf(stderr, "Failed to get node solution.\n");
-	   goto TERMINATE;
-   }
+	status = CPXgetcallbacknodex(env, cbdata, wherefrom, x, 0, numcols - 1);
+	if (status)
+	{
+		fprintf(stderr, "Failed to get node solution.\n");
+		goto TERMINATE;
+	}
 
-   // OR precedence
-   cutvio = 0.0;
-   for (j=0; j<n; j++) 
-   {
-	   if (cutinfo->nUOR[j]==0) continue;
-	   
-	   for (i=0; i<m; i++)
-	   {
-		   k = i*n+j;
-		   if (x[k]<0.001) continue;
+	// OR precedence
+	cutvio = 0.0;
+	for (j = 0; j < n; j++)
+	{
+		if (cutinfo->nUOR[j] == 0) continue;
 
-		   cutvio = -x[k];
-		   for (i1=0; i1<=i; i1++)
-			   for (j1=0; j1<cutinfo->nUOR[j]; j1++)
-			   {
-				   k = i1*n+cutinfo->UOR[j][j1];
-				   cutvio += x[k];
-			   }
-           if (cutvio<-0.001)
-		   {
-			   k1=0;
-			   rhs[0]=0.0;
-			   beg[0]=k1;
-			   for (i1=0; i1<=i; i1++)
-				   for (j1=0; j1<cutinfo->nUOR[j]; j1++)
-				   {
-					   k = i1*n+cutinfo->UOR[j][j1];
-					   ind[k1]=k;
-					   val[k1]=1.0;
-					   k1++;
-				   }
-				k = i*n+j;
-				ind[k1]=k;
-				val[k1]=-1.0;
+		for (i = 0; i < m; i++)
+		{
+			k = i * n + j;
+			if (x[k] < 0.001) continue;
+
+			cutvio = -x[k];
+			for (i1 = 0; i1 <= i; i1++)
+				for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
+				{
+					k = i1 * n + cutinfo->UOR[j][j1];
+					cutvio += x[k];
+				}
+			if (cutvio < -0.001)
+			{
+				k1 = 0;
+				rhs[0] = 0.0;
+				beg[0] = k1;
+				for (i1 = 0; i1 <= i; i1++)
+					for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
+					{
+						k = i1 * n + cutinfo->UOR[j][j1];
+						ind[k1] = k;
+						val[k1] = 1.0;
+						k1++;
+					}
+				k = i * n + j;
+				ind[k1] = k;
+				val[k1] = -1.0;
 				k1++;
-				beg[1]=k1;
+				beg[1] = k1;
 
 				goto ADDCUT;
-		   }
-	   }
-   }
+			}
+		}
+	}
 
-   // AND precedence
-   cutvio = 0.0;
-   for (j=0; j<n; j++) 
-   {
-	   if (cutinfo->nUAND[j]==0) continue;
-	   
-	   for (i=0; i<m; i++)
-	   {
-		   k = i*n+j;
-		   if (x[k]<0.001) continue;
+	// AND precedence
+	cutvio = 0.0;
+	for (j = 0; j < n; j++)
+	{
+		if (cutinfo->nUAND[j] == 0) continue;
 
-		   cutvio = -(double)cutinfo->nUAND[j]*x[k];
-		   for (i1=0; i1<=i; i1++)
-			   for (j1=0; j1<cutinfo->nUAND[j]; j1++)
-			   {
-				   k = i1*n+cutinfo->UAND[j][j1];
-				   cutvio += x[k];
-			   }
-           if (cutvio<-0.001)
-		   {
-			   k1=0;
-			   rhs[0]=0.0;
-			   beg[0]=k1;
-			   for (i1=0; i1<=i; i1++)
-				   for (j1=0; j1<cutinfo->nUAND[j]; j1++)
-				   {
-					   k = i1*n+cutinfo->UAND[j][j1];
-					   ind[k1]=k;
-					   val[k1]=1.0;
-					   k1++;
-				   }
-				k = i*n+j;
-				ind[k1]=k;
-				val[k1]=-(double)cutinfo->nUAND[j];
+		for (i = 0; i < m; i++)
+		{
+			k = i * n + j;
+			if (x[k] < 0.001) continue;
+
+			cutvio = -(double)cutinfo->nUAND[j] * x[k];
+			for (i1 = 0; i1 <= i; i1++)
+				for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
+				{
+					k = i1 * n + cutinfo->UAND[j][j1];
+					cutvio += x[k];
+				}
+			if (cutvio < -0.001)
+			{
+				k1 = 0;
+				rhs[0] = 0.0;
+				beg[0] = k1;
+				for (i1 = 0; i1 <= i; i1++)
+					for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
+					{
+						k = i1 * n + cutinfo->UAND[j][j1];
+						ind[k1] = k;
+						val[k1] = 1.0;
+						k1++;
+					}
+				k = i * n + j;
+				ind[k1] = k;
+				val[k1] = -(double)cutinfo->nUAND[j];
 				k1++;
-				beg[1]=k1;
+				beg[1] = k1;
 
 				goto ADDCUT;
-		   }
-	   }
-   }
+			}
+		}
+	}
 
 ADDCUT:
-   // Use a cut violation tolerance of 0.01
-   if (cutvio<-0.001) 
-   {
-	   // status = CPXcutcallbackadd(env,cbdata,wherefrom,k1,rhs[0],'G',ind,val,0);
-	   status = CPXcutcallbackadd(env,cbdata,wherefrom,k1,rhs[0],'G',ind,val,0);
-	   if (status)
-	   {
-		   fprintf (stderr, "Failed to add cut.\n");
-		   goto TERMINATE;
-	   }
-   }
+	// Use a cut violation tolerance of 0.01
+	if (cutvio < -0.001)
+	{
+		// status = CPXcutcallbackadd(env,cbdata,wherefrom,k1,rhs[0],'G',ind,val,0);
+		status = CPXcutcallbackadd(env, cbdata, wherefrom, k1, rhs[0], 'G', ind, val, 0);
+		if (status)
+		{
+			fprintf(stderr, "Failed to add cut.\n");
+			goto TERMINATE;
+		}
+	}
 
-   // Tell CPLEX that cuts have been created
-   *useraction_p = CPX_CALLBACK_SET; 
+	// Tell CPLEX that cuts have been created
+	*useraction_p = CPX_CALLBACK_SET;
 
 TERMINATE:
 
-   return (status);
+	return (status);
 
-} 
+}
 
 
 //-----------------------------------------------------------------------------
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
 //
-static int CPXPUBLIC myNewcutcallback (CPXCENVptr env,
-               void       *cbdata,
-               int        wherefrom,
-               void       *cbhandle,
-               int        *useraction_p)
+static int CPXPUBLIC myNewcutcallback(CPXCENVptr env,
+	void* cbdata,
+	int        wherefrom,
+	void* cbhandle,
+	int* useraction_p)
 {
 	long i;
 	int status = 0;
@@ -868,20 +863,20 @@ static int CPXPUBLIC myNewcutcallback (CPXCENVptr env,
 	int param;
 	int ivalue;
 
-	CUTINFOptr cutinfo = (CUTINFOptr) cbhandle;
+	CUTINFOptr cutinfo = (CUTINFOptr)cbhandle;
 
-	*useraction_p = CPX_CALLBACK_DEFAULT; 
+	*useraction_p = CPX_CALLBACK_DEFAULT;
 
 	// Are we solving a subproblem?
 	if (cutinfo->FlagLP)
 		return (status);
 
 	// Do we have reached the maximum number of cuts?  
-	if (cutinfo->numtoadd>cutinfo->maxcuts)
+	if (cutinfo->numtoadd > cutinfo->maxcuts)
 		return (status);
 
-	status = CPXgetcallbacknodex(env,cbdata,wherefrom,cutinfo->x,0,cutinfo->numcols-1); 
-	if (status) 
+	status = CPXgetcallbacknodex(env, cbdata, wherefrom, cutinfo->x, 0, cutinfo->numcols - 1);
+	if (status)
 	{
 		fprintf(stderr, "Failed to get node solution.\n");
 		goto TERMINATE;
@@ -943,31 +938,31 @@ static int CPXPUBLIC myNewcutcallback (CPXCENVptr env,
 
 	if (cutinfo->Cover)
 	{
-		if (cutinfo->KnapSol==0)
+		if (cutinfo->KnapSol == 0)
 			BolAdd = Cover_Inequalities(cutinfo);
 		else
 		{
-			cutinfo->FlagLP=1;
+			cutinfo->FlagLP = 1;
 
-			param=CPX_PARAM_SCRIND;ivalue=0;
-			status = CPXsetintparam (cutinfo->env, param, ivalue);
-			if (status>0) return 1;
+			param = CPX_PARAM_SCRIND;ivalue = 0;
+			status = CPXsetintparam(cutinfo->env, param, ivalue);
+			if (status > 0) return 1;
 
-			param=CPX_PARAM_MIPDISPLAY;ivalue=0;
-			status = CPXsetintparam (cutinfo->env, param, ivalue);
-			if (status>0) return 1;
+			param = CPX_PARAM_MIPDISPLAY;ivalue = 0;
+			status = CPXsetintparam(cutinfo->env, param, ivalue);
+			if (status > 0) return 1;
 
 			BolAdd = Cover_InequalitiesCplex(cutinfo);
 
-			param=CPX_PARAM_SCRIND;ivalue=1;
-			status = CPXsetintparam (cutinfo->env, param, ivalue);
-			if (status>0) return 1;
+			param = CPX_PARAM_SCRIND;ivalue = 1;
+			status = CPXsetintparam(cutinfo->env, param, ivalue);
+			if (status > 0) return 1;
 
-			param=CPX_PARAM_MIPDISPLAY;ivalue=2;
-			status = CPXsetintparam (cutinfo->env, param, ivalue);
-			if (status>0) return 1;
+			param = CPX_PARAM_MIPDISPLAY;ivalue = 2;
+			status = CPXsetintparam(cutinfo->env, param, ivalue);
+			if (status > 0) return 1;
 
-			cutinfo->FlagLP=0;
+			cutinfo->FlagLP = 0;
 		}
 		if (BolAdd)
 		{
@@ -979,25 +974,25 @@ static int CPXPUBLIC myNewcutcallback (CPXCENVptr env,
 AddCut:
 
 	// Use a cut violation tolerance of 0.01
-	if (BolAdd==1) 
+	if (BolAdd == 1)
 	{
 		cutinfo->numtoadd++;
 		cutinfo->Cuts[0]++;
-		if ((cutinfo->numtoadd%1000)==0) printf("\n  User Cuts added: %d\n\n",cutinfo->numtoadd);
+		if ((cutinfo->numtoadd % 1000) == 0) printf("\n  User Cuts added: %d\n\n", cutinfo->numtoadd);
 
 		//if ((cutinfo->numtoadd%5000)==0) 
 		//	printf("\n  User Cuts added: %d\n\n",cutinfo->numtoadd);
 
 		// status = CPXcutcallbackadd(env,cbdata,wherefrom,k1,rhs[0],'G',ind,val,0);
-		status = CPXcutcallbackadd(env,cbdata,wherefrom,cutinfo->nz,cutinfo->rhs[0],sense,cutinfo->ind,cutinfo->val,purgeable);
+		status = CPXcutcallbackadd(env, cbdata, wherefrom, cutinfo->nz, cutinfo->rhs[0], sense, cutinfo->ind, cutinfo->val, purgeable);
 		if (status)
 		{
-			fprintf (stderr, "Failed to add cut.\n");
+			fprintf(stderr, "Failed to add cut.\n");
 			goto TERMINATE;
 		}
 
 		// Tell CPLEX that cuts have been created
-		*useraction_p = CPX_CALLBACK_SET; 
+		*useraction_p = CPX_CALLBACK_SET;
 
 	}
 
@@ -1005,177 +1000,18 @@ TERMINATE:
 
 	return (status);
 
-} 
-
-/*
-int CPXPUBLIC myNewcutcallback(CPXCALLBACKCONTEXTptr context, void *cbhandle) {
-    CUTINFOptr cutinfo = (CUTINFOptr)cbhandle;
-    int status = 0;
-
-    // Assicurati che il callback sia invocato nel giusto contesto (relaxation context = separazione cut)
-    int wherefrom = 0;
-    status = CPXcallbackgetinfotype(context, &wherefrom); // Questo restituisce informazioni di contesto
-
-    // Esegui le elaborazioni solo se sei nel contesto di rilassamento LP (equivale al vecchio cut callback)
-    if (status == 0 && (wherefrom & CPX_CALLBACKCONTEXT_RELAXATION)) { 
-        int numcols = cutinfo->numcols;
-        status = CPXcallbackgetrelaxationpoint(context, cutinfo->x, 0, numcols - 1, NULL);
-        if (status) {
-            fprintf(stderr, "Failed to get node solution.\n");
-            return status;
-        }
-
-        int BolAdd = 0;
-        char sense = 'G';
-        int purgeable = 0;
-
-        //!!!--- Logica per OR_AND / Precedence / Cover inequalities identica alla tua funzione ---!!!
-
-		BolAdd = OR_AND_Inequalities(cutinfo);
-		if (BolAdd)
-		{
-			sense = 'G';
-			purgeable = 0;
-			goto AddCut;
-		}
-
-		if (cutinfo->Pred)
-		{
-			BolAdd = Precedence_Inequalities(cutinfo);
-			if (BolAdd)
-			{
-				sense = 'L';
-				purgeable = 1;
-				goto AddCut;
-			}
-			BolAdd = Precedence_Inequalities_2Item(cutinfo);
-			if (BolAdd)
-			{
-				sense = 'L';
-				purgeable = 1;
-				goto AddCut;
-			}
-			//BolAdd = Precedence_Inequalities_2ItemRev(cutinfo);
-			if (BolAdd)
-			{
-				sense = 'L';
-				purgeable = 1;
-				goto AddCut;
-			}
-			BolAdd = Precedence_Inequalities_3Item(cutinfo);
-			if (BolAdd)
-			{
-				sense = 'L';
-				purgeable = 1;
-				goto AddCut;
-			}
-			//BolAdd = Precedence_Inequalities_3ItemRev(cutinfo);
-			if (BolAdd)
-			{
-				sense = 'L';
-				purgeable = 1;
-				goto AddCut;
-			}
-		}
-		if (cutinfo->Cover)
-		{
-			if (cutinfo->KnapSol==0)
-				BolAdd = Cover_Inequalities(cutinfo);
-			else
-			{
-				cutinfo->FlagLP=1;
-
-				param=CPX_PARAM_SCRIND;ivalue=0;
-				status = CPXsetintparam (cutinfo->env, param, ivalue);
-				if (status>0) return 1;
-
-				param=CPX_PARAM_MIPDISPLAY;ivalue=0;
-				status = CPXsetintparam (cutinfo->env, param, ivalue);
-				if (status>0) return 1;
-
-				BolAdd = Cover_InequalitiesCplex(cutinfo);
-
-				param=CPX_PARAM_SCRIND;ivalue=1;
-				status = CPXsetintparam (cutinfo->env, param, ivalue);
-				if (status>0) return 1;
-
-				param=CPX_PARAM_MIPDISPLAY;ivalue=2;
-				status = CPXsetintparam (cutinfo->env, param, ivalue);
-				if (status>0) return 1;
-
-				cutinfo->FlagLP=0;
-			}
-			if (BolAdd)
-			{
-				sense = 'L';
-				purgeable = 1;
-				goto AddCut;
-			}
-		}
-
-        if (cutinfo->FlagLP)
-            return (status);
-
-        if (cutinfo->numtoadd > cutinfo->maxcuts)
-            return (status);
-
-        // OR_AND inequalities
-        BolAdd = OR_AND_Inequalities(cutinfo);
-        if (BolAdd) {
-            sense = 'G';
-            purgeable = 0;
-        }
-        // Precedence inequalities
-        else if (cutinfo->Pred) {
-            BolAdd = Precedence_Inequalities(cutinfo);
-            if (!BolAdd) BolAdd = Precedence_Inequalities_2Item(cutinfo);
-            if (!BolAdd) BolAdd = Precedence_Inequalities_3Item(cutinfo);
-            if (BolAdd) {
-                sense = 'L';
-                purgeable = 1;
-            }
-        }
-        // Cover inequalities
-        else if (cutinfo->Cover) {
-            if (cutinfo->KnapSol == 0)
-                BolAdd = Cover_Inequalities(cutinfo);
-            else {
-                // Qui puoi gestire condizioni speciali come nella versione originale
-            }
-            if (BolAdd) {
-                sense = 'L';
-                purgeable = 1;
-            }
-        }
-
-        // Se devi aggiungere un taglio:
-        if (BolAdd == 1) {
-            cutinfo->numtoadd++;
-            cutinfo->Cuts[0]++;
-
-            // Nota bene: In CPLEX moderno per i user cuts bisogna usare CPXcallbackaddusercuts
-            status = CPXcallbackaddusercuts(context, cutinfo->nz, 1, cutinfo->rhs, &sense,
-                                            cutinfo->val, cutinfo->ind, NULL, &purgeable);
-            if (status) fprintf(stderr, "Failed to add cut.\n");
-            // Non serve più *useraction_p: se status == 0, la callback ha aggiunto un vincolo
-        }
-    }
-
-    return status;
 }
-*/
-
 
 
 //-----------------------------------------------------------------------------
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
 //
-static int CPXPUBLIC myHeucutcallback (CPXCENVptr env,
-               void       *cbdata,
-               int        wherefrom,
-               void       *cbhandle,
-               int        *useraction_p)
+static int CPXPUBLIC myHeucutcallback(CPXCENVptr env,
+	void* cbdata,
+	int        wherefrom,
+	void* cbhandle,
+	int* useraction_p)
 {
 	long i;
 	int status = 0;
@@ -1185,16 +1021,16 @@ static int CPXPUBLIC myHeucutcallback (CPXCENVptr env,
 	int param;
 	int ivalue;
 
-	CUTINFOptr cutinfo = (CUTINFOptr) cbhandle;
+	CUTINFOptr cutinfo = (CUTINFOptr)cbhandle;
 
-	*useraction_p = CPX_CALLBACK_DEFAULT; 
+	*useraction_p = CPX_CALLBACK_DEFAULT;
 
 	// We are solving a subproblem?
 	if (cutinfo->FlagLP)
 		return (status);
 
-	status = CPXgetcallbacknodex (env,cbdata,wherefrom,cutinfo->x,0,cutinfo->numcols-1); 
-	if (status) 
+	status = CPXgetcallbacknodex(env, cbdata, wherefrom, cutinfo->x, 0, cutinfo->numcols - 1);
+	if (status)
 	{
 		fprintf(stderr, "Failed to get node solution.\n");
 		goto TERMINATE;
@@ -1218,22 +1054,22 @@ static int CPXPUBLIC myHeucutcallback (CPXCENVptr env,
 AddCut:
 
 	// Use a cut violation tolerance of 0.01
-	if (BolAdd==1) 
+	if (BolAdd == 1)
 	{
 		cutinfo->numtoadd++;
 		cutinfo->Cuts[0]++;
-		if ((cutinfo->numtoadd%1000)==0) printf("\n  User Cuts added: %d\n\n",cutinfo->numtoadd);
+		if ((cutinfo->numtoadd % 1000) == 0) printf("\n  User Cuts added: %d\n\n", cutinfo->numtoadd);
 
 		// status = CPXcutcallbackadd(env,cbdata,wherefrom,k1,rhs[0],'G',ind,val,0);
-		status = CPXcutcallbackadd(env,cbdata,wherefrom,cutinfo->nz,cutinfo->rhs[0],sense,cutinfo->ind,cutinfo->val,purgeable);
+		status = CPXcutcallbackadd(env, cbdata, wherefrom, cutinfo->nz, cutinfo->rhs[0], sense, cutinfo->ind, cutinfo->val, purgeable);
 		if (status)
 		{
-			fprintf (stderr, "Failed to add cut.\n");
+			fprintf(stderr, "Failed to add cut.\n");
 			goto TERMINATE;
 		}
 
 		// Tell CPLEX that cuts have been created
-		*useraction_p = CPX_CALLBACK_SET; 
+		*useraction_p = CPX_CALLBACK_SET;
 
 	}
 
@@ -1241,50 +1077,7 @@ TERMINATE:
 
 	return (status);
 
-} 
-
-/*
-int CPXPUBLIC myHeuCutGenericCallback(CPXCALLBACKCONTEXTptr context, void *userhandle)
-{
-    CUTINFOptr cutinfo = (CUTINFOptr) userhandle;
-    int status = 0;
-    long i;
-    int BolAdd = 0;
-    char sense[1] = {'G'};
-    int purgeable[1] = {0};
-    int rowbeg[1] = {0}; // Serve per definire la struttura dei tagli aggiunti
-
-    // Recupera la soluzione corrente del rilassamento LP
-    status = CPXcallbackgetrelaxationpoint(context, cutinfo->x, 0, cutinfo->numcols - 1, NULL);
-    if (status) {
-        fprintf(stderr, "Failed to get node solution.\n");
-        return status;
-    }
-
-    // Esegui la logica di separazione dei tagli (Heuristics OR_AND)
-    BolAdd = OR_AND_InequalitiesHeu(cutinfo);
-
-    // Se è stato trovato un taglio, aggiungilo
-    if (BolAdd == 1) {
-        cutinfo->numtoadd++;
-        cutinfo->Cuts[0]++;
-        if ((cutinfo->numtoadd % 1000) == 0)
-            printf("\n  User Cuts added: %ld\n\n", cutinfo->numtoadd);
-
-        // Aggiungi il taglio tramite la nuova API generica
-        status = CPXcallbackaddusercuts(context, cutinfo->nz, 1, cutinfo->rhs,
-                                        sense, cutinfo->val, cutinfo->ind,
-                                        rowbeg, purgeable);
-        if (status) {
-            fprintf(stderr, "Failed to add cut.\n");
-            return status;
-        }
-        // Non serve *useraction_p, la funzione API gestisce il trigger
-    }
-
-    return status;
-}*/
-
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1293,112 +1086,112 @@ int CPXPUBLIC myHeuCutGenericCallback(CPXCALLBACKCONTEXTptr context, void *userh
 //
 int OR_AND_Inequalities(CUTINFOptr cutinfo)
 {
-   int status = 0;
+	int status = 0;
 
-   int      numcols  = cutinfo->numcols;
-   int      numtoadd = cutinfo->numtoadd;
-   int      numcuts  = cutinfo->num;
-   double   *x       = cutinfo->x;
-   int      *beg     = cutinfo->beg;
-   int      *ind     = cutinfo->ind;
-   double   *val     = cutinfo->val;
-   double   *rhs     = cutinfo->rhs;
-   long     n        = cutinfo->n;
-   long     m        = cutinfo->m;
-   double   cutvio;
-   int      i, j, k, cutnz;
-   long     i1,j1,k1;
+	int      numcols = cutinfo->numcols;
+	int      numtoadd = cutinfo->numtoadd;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
+	double   cutvio;
+	int      i, j, k, cutnz;
+	long     i1, j1, k1;
 
-   // OR precedence
-   cutvio = 0.0;
-   for (j=0; j<n; j++) 
-   {
-	   if (cutinfo->nUOR[j]==0) continue;
-	   
-	   for (i=0; i<m; i++)
-	   {
-		   k = i*n+j;
-		   if (x[k]<0.001) continue;
+	// OR precedence
+	cutvio = 0.0;
+	for (j = 0; j < n; j++)
+	{
+		if (cutinfo->nUOR[j] == 0) continue;
 
-		   cutvio = -x[k];
-		   for (i1=0; i1<=i; i1++)
-			   for (j1=0; j1<cutinfo->nUOR[j]; j1++)
-			   {
-				   k = i1*n+cutinfo->UOR[j][j1];
-				   cutvio += x[k];
-			   }
-           if (cutvio<-0.001)
-		   {
-			   k1=0;
-			   rhs[0]=0.0;
-			   beg[0]=k1;
-			   for (i1=0; i1<=i; i1++)
-				   for (j1=0; j1<cutinfo->nUOR[j]; j1++)
-				   {
-					   k = i1*n+cutinfo->UOR[j][j1];
-					   ind[k1]=k;
-					   val[k1]=1.0;
-					   k1++;
-				   }
-				k = i*n+j;
-				ind[k1]=k;
-				val[k1]=-1.0;
+		for (i = 0; i < m; i++)
+		{
+			k = i * n + j;
+			if (x[k] < 0.001) continue;
+
+			cutvio = -x[k];
+			for (i1 = 0; i1 <= i; i1++)
+				for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
+				{
+					k = i1 * n + cutinfo->UOR[j][j1];
+					cutvio += x[k];
+				}
+			if (cutvio < -0.001)
+			{
+				k1 = 0;
+				rhs[0] = 0.0;
+				beg[0] = k1;
+				for (i1 = 0; i1 <= i; i1++)
+					for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
+					{
+						k = i1 * n + cutinfo->UOR[j][j1];
+						ind[k1] = k;
+						val[k1] = 1.0;
+						k1++;
+					}
+				k = i * n + j;
+				ind[k1] = k;
+				val[k1] = -1.0;
 				k1++;
-				beg[1]=k1;
+				beg[1] = k1;
 
-				cutinfo->nz=k1;
+				cutinfo->nz = k1;
 
 				return 1;
-		   }
-	   }
-   }
+			}
+		}
+	}
 
-   // AND precedence
-   cutvio = 0.0;
-   for (j=0; j<n; j++) 
-   {
-	   if (cutinfo->nUAND[j]==0) continue;
-	   
-	   for (i=0; i<m; i++)
-	   {
-		   k = i*n+j;
-		   if (x[k]<0.001) continue;
+	// AND precedence
+	cutvio = 0.0;
+	for (j = 0; j < n; j++)
+	{
+		if (cutinfo->nUAND[j] == 0) continue;
 
-		   cutvio = -(double)cutinfo->nUAND[j]*x[k];
-		   for (i1=0; i1<=i; i1++)
-			   for (j1=0; j1<cutinfo->nUAND[j]; j1++)
-			   {
-				   k = i1*n+cutinfo->UAND[j][j1];
-				   cutvio += x[k];
-			   }
-           if (cutvio<-0.001)
-		   {
-			   k1=0;
-			   rhs[0]=0.0;
-			   beg[0]=k1;
-			   for (i1=0; i1<=i; i1++)
-				   for (j1=0; j1<cutinfo->nUAND[j]; j1++)
-				   {
-					   k = i1*n+cutinfo->UAND[j][j1];
-					   ind[k1]=k;
-					   val[k1]=1.0;
-					   k1++;
-				   }
-				k = i*n+j;
-				ind[k1]=k;
-				val[k1]=-(double)cutinfo->nUAND[j];
+		for (i = 0; i < m; i++)
+		{
+			k = i * n + j;
+			if (x[k] < 0.001) continue;
+
+			cutvio = -(double)cutinfo->nUAND[j] * x[k];
+			for (i1 = 0; i1 <= i; i1++)
+				for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
+				{
+					k = i1 * n + cutinfo->UAND[j][j1];
+					cutvio += x[k];
+				}
+			if (cutvio < -0.001)
+			{
+				k1 = 0;
+				rhs[0] = 0.0;
+				beg[0] = k1;
+				for (i1 = 0; i1 <= i; i1++)
+					for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
+					{
+						k = i1 * n + cutinfo->UAND[j][j1];
+						ind[k1] = k;
+						val[k1] = 1.0;
+						k1++;
+					}
+				k = i * n + j;
+				ind[k1] = k;
+				val[k1] = -(double)cutinfo->nUAND[j];
 				k1++;
-				beg[1]=k1;
+				beg[1] = k1;
 
-				cutinfo->nz=k1;
+				cutinfo->nz = k1;
 
 				return 1;
-		   }
-	   }
-   }
+			}
+		}
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1409,59 +1202,59 @@ int OR_AND_InequalitiesHeu(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, cutnz;
-	long     i1,j1,k1;
+	long     i1, j1, k1;
 
 	// OR precedence
 	cutvio = 0.0;
-	for (j=0; j<n; j++) 
+	for (j = 0; j < n; j++)
 	{
-		if (cutinfo->nUOR[j]==0) continue;
-	   
-		if (x[j]<0.001) continue;
+		if (cutinfo->nUOR[j] == 0) continue;
+
+		if (x[j] < 0.001) continue;
 
 		cutvio = -x[j];
-		for (j1=0; j1<cutinfo->nUOR[j]; j1++)
+		for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
 		{
 			k = cutinfo->UOR[j][j1];
-			if (cutinfo->FDepA[k]>0)
+			if (cutinfo->FDepA[k] > 0)
 				cutvio += 1.0;
 			else
 				cutvio += x[k];
 		}
-		if (cutvio<-0.001)
+		if (cutvio < -0.001)
 		{
-			k1=0;
-			rhs[0]=0.0;
-			beg[0]=k1;
-			for (j1=0; j1<cutinfo->nUOR[j]; j1++)
+			k1 = 0;
+			rhs[0] = 0.0;
+			beg[0] = k1;
+			for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
 			{
 				k = cutinfo->UOR[j][j1];
-				if (cutinfo->FDepA[k]==0)
+				if (cutinfo->FDepA[k] == 0)
 				{
-					ind[k1]=k;
-					val[k1]=1.0;
+					ind[k1] = k;
+					val[k1] = 1.0;
 					k1++;
 				}
 			}
 			k = j;
-			ind[k1]=k;
-			val[k1]=-1.0;
+			ind[k1] = k;
+			val[k1] = -1.0;
 			k1++;
-			beg[1]=k1;
+			beg[1] = k1;
 
-			cutinfo->nz=k1;
+			cutinfo->nz = k1;
 
 			return 1;
 		}
@@ -1469,50 +1262,50 @@ int OR_AND_InequalitiesHeu(CUTINFOptr cutinfo)
 
 	// AND precedence
 	cutvio = 0.0;
-	for (j=0; j<n; j++) 
+	for (j = 0; j < n; j++)
 	{
-		if (cutinfo->nUAND[j]==0) continue;
-	   
-		if (x[j]<0.001) continue;
+		if (cutinfo->nUAND[j] == 0) continue;
 
-		cutvio = -(double)cutinfo->nUAND[j]*x[j];
-		for (j1=0; j1<cutinfo->nUAND[j]; j1++)
+		if (x[j] < 0.001) continue;
+
+		cutvio = -(double)cutinfo->nUAND[j] * x[j];
+		for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
 		{
 			k = cutinfo->UAND[j][j1];
-			if (cutinfo->FDepA[k]>0)
+			if (cutinfo->FDepA[k] > 0)
 				cutvio += 1.0;
 			else
 				cutvio += x[k];
 		}
-		if (cutvio<-0.001)
+		if (cutvio < -0.001)
 		{
-			k1=0;
-			rhs[0]=0.0;
-			beg[0]=k1;
-			for (j1=0; j1<cutinfo->nUAND[j]; j1++)
+			k1 = 0;
+			rhs[0] = 0.0;
+			beg[0] = k1;
+			for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
 			{
 				k = cutinfo->UAND[j][j1];
-				if (cutinfo->FDepA[k]==0)
+				if (cutinfo->FDepA[k] == 0)
 				{
-					ind[k1]=k;
-					val[k1]=1.0;
+					ind[k1] = k;
+					val[k1] = 1.0;
 					k1++;
 				}
 			}
 			k = j;
-			ind[k1]=k;
-			val[k1]=-(double)cutinfo->nUAND[j];
+			ind[k1] = k;
+			val[k1] = -(double)cutinfo->nUAND[j];
 			k1++;
-			beg[1]=k1;
+			beg[1] = k1;
 
-			cutinfo->nz=k1;
+			cutinfo->nz = k1;
 
 			return 1;
 		}
 	}
 
 	return 0;
-} 
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1523,87 +1316,87 @@ int Precedence_Inequalities(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, cutnz;
-	long     i1,j1,k1,kk;
+	long     i1, j1, k1, kk;
 
 	// Precedence search
-	for (j1=0; j1<n; j1++)
+	for (j1 = 0; j1 < n; j1++)
 	{
-		if ((cutinfo->FDepA[j1]>0)||(cutinfo->nY[j1]>1))
-		//if ((cutinfo->nY[j1]>1))
+		if ((cutinfo->FDepA[j1] > 0) || (cutinfo->nY[j1] > 1))
+			//if ((cutinfo->nY[j1]>1))
 			continue;
 
-		for (j=0; j<n; j++) 
+		for (j = 0; j < n; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepP[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepP[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			if (fabs(cutinfo->p[j1]-cutinfo->p[j])>0.001)
+			if (fabs(cutinfo->p[j1] - cutinfo->p[j]) > 0.001)
 				continue;
 
 			if (cutinfo->u[j1] < cutinfo->u[j] - 0.001)
 				continue;
 
-			if ((fabs(cutinfo->u[j1]-cutinfo->u[j])<0.001)&&(j1>j))
+			if ((fabs(cutinfo->u[j1] - cutinfo->u[j]) < 0.001) && (j1 > j))
 				continue;
 
-			for (i1=0; i1<m; i1++)
+			for (i1 = 0; i1 < m; i1++)
 			{
-				k1 = i1*n+j1;
-				if (x[k1]<0.001) 
+				k1 = i1 * n + j1;
+				if (x[k1] < 0.001)
 					continue;
 
 				cutvio = 0.0;
-				for (i=0; i<i1-1; i++)
+				for (i = 0; i < i1 - 1; i++)
 				{
-					k = i*n+j;
+					k = i * n + j;
 					cutvio += x[k];
 				}
-				if ((cutvio+x[k1])>1.001)
+				if ((cutvio + x[k1]) > 1.001)
 				{
 					//printf("\n Precedence:  (j1,u,p)=(%3d,%5.1lf,%5.1lf)  (j,u,p)=(%3d,%5.1lf,%5.1lf)  Sprint: %d\n",
 					//	   j1,cutinfo->u[j1],cutinfo->p[j1],j,cutinfo->u[j],cutinfo->p[j],i1);
 					//for (i1=0; i1<KP.n; i1++)
 					//	printf("%d)  x(%d)=p=%lf   w=%d    x=%d \n",i1,KP.ind[i1],KP.p[i1],KP.w[i1],KP.x[i1]);
 
-					kk=0;
-					rhs[0]=1.0;
-					beg[0]=kk;
+					kk = 0;
+					rhs[0] = 1.0;
+					beg[0] = kk;
 
-					ind[kk]=k1;
-					val[kk]=1.0;
+					ind[kk] = k1;
+					val[kk] = 1.0;
 					kk++;
 
-					for (i=0; i<i1-1; i++)
+					for (i = 0; i < i1 - 1; i++)
 					{
-						k = i*n+j;
-						ind[kk]=k;
-						val[kk]=1.0;
+						k = i * n + j;
+						ind[kk] = k;
+						val[kk] = 1.0;
 						kk++;
 					}
 
-					beg[1]=kk;
-					cutinfo->nz=kk;
+					beg[1] = kk;
+					cutinfo->nz = kk;
 
 					return 1;
 				}
 			}
-	   }
-   }
+		}
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1614,29 +1407,29 @@ int Precedence_Inequalities_2Item(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, h, cutnz;
-	long     i1,j1,k1,kk;
-	long     j0,k0;
+	long     i1, j1, k1, kk;
+	long     j0, k0;
 
 	// Precedence search
-	for (j1=0; j1<n; j1++)
+	for (j1 = 0; j1 < n; j1++)
 	{
 		//if ((cutinfo->FDep[j1]>0)||(cutinfo->nY[j1]>1))
-		if ((cutinfo->Flag2I[j1]==0)||(cutinfo->nY[j1]>1))
+		if ((cutinfo->Flag2I[j1] == 0) || (cutinfo->nY[j1] > 1))
 			continue;
 
-		for (h=0; h<cutinfo->Flag2I[j1]; h++)
+		for (h = 0; h < cutinfo->Flag2I[j1]; h++)
 		{
 			j = cutinfo->Tupla2I[j1][h].j1;
 			j0 = cutinfo->Tupla2I[j1][h].j2;
@@ -1656,53 +1449,53 @@ int Precedence_Inequalities_2Item(CUTINFOptr cutinfo)
 			////if ((fabs(cutinfo->u[j1]-(cutinfo->u[j]+cutinfo->u[j0]))<0.001)&&(j1>j)&&(j1>j0))
 			////	continue;
 
-			for (i1=0; i1<m; i1++)
+			for (i1 = 0; i1 < m; i1++)
 			{
-				k1 = i1*n+j1;
-				if (x[k1]<0.001) 
+				k1 = i1 * n + j1;
+				if (x[k1] < 0.001)
 					continue;
 
-				for (i=0; i<i1-1; i++)
+				for (i = 0; i < i1 - 1; i++)
 				{
-					k = i*n+j;
-					k0 = i*n+j0;
+					k = i * n + j;
+					k0 = i * n + j0;
 					cutvio = x[k] + x[k0];
-					
-					if ((cutvio+x[k1])>2.001)
+
+					if ((cutvio + x[k1]) > 2.001)
 					{
 						//printf("\n Precedence:  (j1,u,p)=(%3d,%5.1lf,%5.1lf)  (j,u,p)=(%3d,%5.1lf,%5.1lf)  Sprint: %d\n",
 						//	   j1,cutinfo->u[j1],cutinfo->p[j1],j,cutinfo->u[j],cutinfo->p[j],i1);
 						//for (i1=0; i1<KP.n; i1++)
 						//	printf("%d)  x(%d)=p=%lf   w=%d    x=%d \n",i1,KP.ind[i1],KP.p[i1],KP.w[i1],KP.x[i1]);
 
-						kk=0;
-						rhs[0]=2.0;
-						beg[0]=kk;
+						kk = 0;
+						rhs[0] = 2.0;
+						beg[0] = kk;
 
-						ind[kk]=k1;
-						val[kk]=1.0;
+						ind[kk] = k1;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k;
-						val[kk]=1.0;
+						ind[kk] = k;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k0;
-						val[kk]=1.0;
+						ind[kk] = k0;
+						val[kk] = 1.0;
 						kk++;
 
-						beg[1]=kk;
-						cutinfo->nz=kk;
+						beg[1] = kk;
+						cutinfo->nz = kk;
 
 						return 1;
 					}
 				}
 			}
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1713,29 +1506,29 @@ int Precedence_Inequalities_2ItemRev(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, h, cutnz;
-	long     i1,j1,k1,kk;
-	long     j0,k0;
+	long     i1, j1, k1, kk;
+	long     j0, k0;
 
 	// Precedence search
-	for (j1=0; j1<n; j1++)
+	for (j1 = 0; j1 < n; j1++)
 	{
 		//if ((cutinfo->FDep[j1]>0)||(cutinfo->nY[j1]>1))
-		if ((cutinfo->Flag2IRev[j1]==0)||(cutinfo->nY[j1]>1))
+		if ((cutinfo->Flag2IRev[j1] == 0) || (cutinfo->nY[j1] > 1))
 			continue;
 
-		for (h=0; h<cutinfo->Flag2IRev[j1]; h++)
+		for (h = 0; h < cutinfo->Flag2IRev[j1]; h++)
 		{
 			j = cutinfo->Tupla2IRev[j1][h].j1;
 			j0 = cutinfo->Tupla2IRev[j1][h].j2;
@@ -1755,53 +1548,53 @@ int Precedence_Inequalities_2ItemRev(CUTINFOptr cutinfo)
 			////if ((fabs(cutinfo->u[j1]-(cutinfo->u[j]+cutinfo->u[j0]))<0.001)&&(j1>j)&&(j1>j0))
 			////	continue;
 
-			for (i1=0; i1<m-1; i1++)
+			for (i1 = 0; i1 < m - 1; i1++)
 			{
-				k1 = i1*n+j1;
-				if (x[k1]<0.001) 
+				k1 = i1 * n + j1;
+				if (x[k1] < 0.001)
 					continue;
 
-				for (i=i1+1; i<m; i++)
+				for (i = i1 + 1; i < m; i++)
 				{
-					k = i*n+j;
-					k0 = i*n+j0;
+					k = i * n + j;
+					k0 = i * n + j0;
 					cutvio = x[k] + x[k0];
-					
-					if ((cutvio+x[k1])>2.001)
+
+					if ((cutvio + x[k1]) > 2.001)
 					{
 						//printf("\n Precedence:  (j1,u,p)=(%3d,%5.1lf,%5.1lf)  (j,u,p)=(%3d,%5.1lf,%5.1lf)  Sprint: %d\n",
 						//	   j1,cutinfo->u[j1],cutinfo->p[j1],j,cutinfo->u[j],cutinfo->p[j],i1);
 						//for (i1=0; i1<KP.n; i1++)
 						//	printf("%d)  x(%d)=p=%lf   w=%d    x=%d \n",i1,KP.ind[i1],KP.p[i1],KP.w[i1],KP.x[i1]);
 
-						kk=0;
-						rhs[0]=2.0;
-						beg[0]=kk;
+						kk = 0;
+						rhs[0] = 2.0;
+						beg[0] = kk;
 
-						ind[kk]=k1;
-						val[kk]=1.0;
+						ind[kk] = k1;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k;
-						val[kk]=1.0;
+						ind[kk] = k;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k0;
-						val[kk]=1.0;
+						ind[kk] = k0;
+						val[kk] = 1.0;
 						kk++;
 
-						beg[1]=kk;
-						cutinfo->nz=kk;
+						beg[1] = kk;
+						cutinfo->nz = kk;
 
 						return 1;
 					}
 				}
 			}
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1812,29 +1605,29 @@ int Precedence_Inequalities_3Item(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, h, cutnz;
-	long     i1,j1,k1,kk;
-	long     j0,k0,j2,k2;
+	long     i1, j1, k1, kk;
+	long     j0, k0, j2, k2;
 
 	// Precedence search
-	for (j1=0; j1<n; j1++)
+	for (j1 = 0; j1 < n; j1++)
 	{
 		//if ((cutinfo->FDep[j1]>0)||(cutinfo->nY[j1]>1))
-		if ((cutinfo->Flag3I[j1]==0)||(cutinfo->nY[j1]>1))
+		if ((cutinfo->Flag3I[j1] == 0) || (cutinfo->nY[j1] > 1))
 			continue;
 
-		for (h=0; h<cutinfo->Flag3I[j1]; h++)
+		for (h = 0; h < cutinfo->Flag3I[j1]; h++)
 		{
 			j = cutinfo->Tupla3I[j1][h].j1;
 			j0 = cutinfo->Tupla3I[j1][h].j2;
@@ -1858,58 +1651,58 @@ int Precedence_Inequalities_3Item(CUTINFOptr cutinfo)
 			////if ((fabs(cutinfo->u[j1]-(cutinfo->u[j]+cutinfo->u[j0]))<0.001)&&(j1>j)&&(j1>j0))
 			////	continue;
 
-			for (i1=0; i1<m; i1++)
+			for (i1 = 0; i1 < m; i1++)
 			{
-				k1 = i1*n+j1;
-				if (x[k1]<0.001) 
+				k1 = i1 * n + j1;
+				if (x[k1] < 0.001)
 					continue;
 
-				for (i=0; i<i1-1; i++)
+				for (i = 0; i < i1 - 1; i++)
 				{
-					k = i*n+j;
-					k0 = i*n+j0;
-					k2 = i*n+j2;
+					k = i * n + j;
+					k0 = i * n + j0;
+					k2 = i * n + j2;
 					cutvio = x[k] + x[k0] + x[k2];
-					
-					if ((cutvio+x[k1])>3.001)
+
+					if ((cutvio + x[k1]) > 3.001)
 					{
 						//printf("\n Precedence:  (j1,u,p)=(%3d,%5.1lf,%5.1lf)  (j,u,p)=(%3d,%5.1lf,%5.1lf)  Sprint: %d\n",
 						//	   j1,cutinfo->u[j1],cutinfo->p[j1],j,cutinfo->u[j],cutinfo->p[j],i1);
 						//for (i1=0; i1<KP.n; i1++)
 						//	printf("%d)  x(%d)=p=%lf   w=%d    x=%d \n",i1,KP.ind[i1],KP.p[i1],KP.w[i1],KP.x[i1]);
 
-						kk=0;
-						rhs[0]=3.0;
-						beg[0]=kk;
+						kk = 0;
+						rhs[0] = 3.0;
+						beg[0] = kk;
 
-						ind[kk]=k1;
-						val[kk]=1.0;
+						ind[kk] = k1;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k;
-						val[kk]=1.0;
+						ind[kk] = k;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k0;
-						val[kk]=1.0;
+						ind[kk] = k0;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k2;
-						val[kk]=1.0;
+						ind[kk] = k2;
+						val[kk] = 1.0;
 						kk++;
 
-						beg[1]=kk;
-						cutinfo->nz=kk;
+						beg[1] = kk;
+						cutinfo->nz = kk;
 
 						return 1;
 					}
 				}
 			}
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1920,29 +1713,29 @@ int Precedence_Inequalities_3ItemRev(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, h, cutnz;
-	long     i1,j1,k1,kk;
-	long     j0,k0,j2,k2;
+	long     i1, j1, k1, kk;
+	long     j0, k0, j2, k2;
 
 	// Precedence search
-	for (j1=0; j1<n; j1++)
+	for (j1 = 0; j1 < n; j1++)
 	{
 		//if ((cutinfo->FDep[j1]>0)||(cutinfo->nY[j1]>1))
-		if ((cutinfo->Flag3IRev[j1]==0)||(cutinfo->nY[j1]>1))
+		if ((cutinfo->Flag3IRev[j1] == 0) || (cutinfo->nY[j1] > 1))
 			continue;
 
-		for (h=0; h<cutinfo->Flag3IRev[j1]; h++)
+		for (h = 0; h < cutinfo->Flag3IRev[j1]; h++)
 		{
 			j = cutinfo->Tupla3IRev[j1][h].j1;
 			j0 = cutinfo->Tupla3IRev[j1][h].j2;
@@ -1966,58 +1759,58 @@ int Precedence_Inequalities_3ItemRev(CUTINFOptr cutinfo)
 			////if ((fabs(cutinfo->u[j1]-(cutinfo->u[j]+cutinfo->u[j0]))<0.001)&&(j1>j)&&(j1>j0))
 			////	continue;
 
-			for (i1=0; i1<m-1; i1++)
+			for (i1 = 0; i1 < m - 1; i1++)
 			{
-				k1 = i1*n+j1;
-				if (x[k1]<0.001) 
+				k1 = i1 * n + j1;
+				if (x[k1] < 0.001)
 					continue;
 
-				for (i=i1+1; i<m; i++)
+				for (i = i1 + 1; i < m; i++)
 				{
-					k = i*n+j;
-					k0 = i*n+j0;
-					k2 = i*n+j2;
+					k = i * n + j;
+					k0 = i * n + j0;
+					k2 = i * n + j2;
 					cutvio = x[k] + x[k0] + x[k2];
-					
-					if ((cutvio+x[k1])>3.001)
+
+					if ((cutvio + x[k1]) > 3.001)
 					{
 						//printf("\n Precedence:  (j1,u,p)=(%3d,%5.1lf,%5.1lf)  (j,u,p)=(%3d,%5.1lf,%5.1lf)  Sprint: %d\n",
 						//	   j1,cutinfo->u[j1],cutinfo->p[j1],j,cutinfo->u[j],cutinfo->p[j],i1);
 						//for (i1=0; i1<KP.n; i1++)
 						//	printf("%d)  x(%d)=p=%lf   w=%d    x=%d \n",i1,KP.ind[i1],KP.p[i1],KP.w[i1],KP.x[i1]);
 
-						kk=0;
-						rhs[0]=3.0;
-						beg[0]=kk;
+						kk = 0;
+						rhs[0] = 3.0;
+						beg[0] = kk;
 
-						ind[kk]=k1;
-						val[kk]=1.0;
+						ind[kk] = k1;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k;
-						val[kk]=1.0;
+						ind[kk] = k;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k0;
-						val[kk]=1.0;
+						ind[kk] = k0;
+						val[kk] = 1.0;
 						kk++;
 
-						ind[kk]=k2;
-						val[kk]=1.0;
+						ind[kk] = k2;
+						val[kk] = 1.0;
 						kk++;
 
-						beg[1]=kk;
-						cutinfo->nz=kk;
+						beg[1] = kk;
+						cutinfo->nz = kk;
 
 						return 1;
 					}
 				}
 			}
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -2028,46 +1821,46 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, cutnz;
-	long     i1,j1,k1;
-	long     konta,cover;
-	long     ww,minw,maxw;
-	double   lhs,maxlhs;
+	long     i1, j1, k1;
+	long     konta, cover;
+	long     ww, minw, maxw;
+	double   lhs, maxlhs;
 	//Knapsack KP;
 
 	// Setup Knapsack data structure
 	//KP.Malloc(n);
 
 	// Check a cover for each knapsack constraint
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		cutinfo->KP.n = 0;
 		cutinfo->KP.nf = 0;
 		cutinfo->KP.zf = 0;
 		//cutinfo->KP.W = int(cutinfo->pmax[i]+0.001);
-		cutinfo->KP.W = int(cutinfo->pmax[i]*10+0.001);
+		cutinfo->KP.W = int(cutinfo->pmax[i] * 10 + 0.001);
 
-		for (j=0; j<n; j++) 
+		for (j = 0; j < n; j++)
 		{
-			cutinfo->KP.fcover[j]=0;
-			k = i*n+j;
-			if (x[k]<0.001) continue;
+			cutinfo->KP.fcover[j] = 0;
+			k = i * n + j;
+			if (x[k] < 0.001) continue;
 
-			if (x[k]>0.99999999)
+			if (x[k] > 0.99999999)
 			{
-				cutinfo->KP.fcover[j]=1;
-				cutinfo->KP.wf[cutinfo->KP.nf] = int(cutinfo->p[j]*10+0.001);
+				cutinfo->KP.fcover[j] = 1;
+				cutinfo->KP.wf[cutinfo->KP.nf] = int(cutinfo->p[j] * 10 + 0.001);
 				cutinfo->KP.indf[cutinfo->KP.nf] = j;
 				cutinfo->KP.zf = cutinfo->KP.zf + 1;
 				cutinfo->KP.W = cutinfo->KP.W - cutinfo->KP.wf[cutinfo->KP.nf];
@@ -2076,14 +1869,14 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 			else
 			{
 				//cutinfo->KP.w[cutinfo->KP.n] = int(cutinfo->p[j]+0.001);
-				cutinfo->KP.w[cutinfo->KP.n] = int(cutinfo->p[j]*10+0.001);
+				cutinfo->KP.w[cutinfo->KP.n] = int(cutinfo->p[j] * 10 + 0.001);
 				cutinfo->KP.p[cutinfo->KP.n] = x[k];
 				cutinfo->KP.ind[cutinfo->KP.n] = j;
 				cutinfo->KP.n++;
 			}
 		}
 
-		if (cutinfo->KP.n>0)
+		if (cutinfo->KP.n > 0)
 		{
 #ifdef ReMap
 			cutinfo->KP.SolveReMap();
@@ -2092,30 +1885,30 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 #endif
 			cutinfo->KP.zopt = cutinfo->KP.zopt + cutinfo->KP.zf;
 		}
-		else 
+		else
 			cutinfo->KP.zopt = cutinfo->KP.zf;
 
-		konta=cutinfo->KP.nf;
-		for (i1=0; i1<cutinfo->KP.n; i1++)
+		konta = cutinfo->KP.nf;
+		for (i1 = 0; i1 < cutinfo->KP.n; i1++)
 		{
-			if (cutinfo->KP.x[i1]>0)
+			if (cutinfo->KP.x[i1] > 0)
 			{
-				cutinfo->KP.fcover[cutinfo->KP.ind[i1]]=1;
+				cutinfo->KP.fcover[cutinfo->KP.ind[i1]] = 1;
 				konta++;
 			}
 		}
 
 		// Check if a violated minimal cover exists
-		cover=-1;
+		cover = -1;
 		//minw=100000000;
-		maxlhs=0.0;
-		for (i1=0; i1<cutinfo->KP.n; i1++)
+		maxlhs = 0.0;
+		for (i1 = 0; i1 < cutinfo->KP.n; i1++)
 		{
-			if (cutinfo->KP.x[i1]>0) continue;
-			if (((double)cutinfo->KP.zopt+cutinfo->KP.p[i1])>((double)konta+0.0001))
+			if (cutinfo->KP.x[i1] > 0) continue;
+			if (((double)cutinfo->KP.zopt + cutinfo->KP.p[i1]) > ((double)konta + 0.0001))
 			{
-				lhs=((double)cutinfo->KP.zopt+cutinfo->KP.p[i1]);
-				if (lhs>maxlhs)
+				lhs = ((double)cutinfo->KP.zopt + cutinfo->KP.p[i1]);
+				if (lhs > maxlhs)
 				{
 					lhs = maxlhs;
 					cover = cutinfo->KP.ind[i1];
@@ -2128,9 +1921,9 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 			}
 		}
 
-		if (cover>-1)
+		if (cover > -1)
 		{
-			cutinfo->KP.fcover[cover]=1;
+			cutinfo->KP.fcover[cover] = 1;
 
 			//printf("\n Knapsack  W=%d  zopt=%lf  zf=%lf\n",cutinfo->KP.W,cutinfo->KP.zopt,cutinfo->KP.zf);
 			////for (i1=0; i1<cutinfo->KP.n; i1++)
@@ -2138,23 +1931,23 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 
 			// Try to extend the cover
 			maxw = 0;
-			for (j=0; j<n; j++) 
+			for (j = 0; j < n; j++)
 			{
 				if (cutinfo->KP.fcover[j])
 				{
-					ww = int(cutinfo->p[j]*10+0.001);
-					if (ww>maxw)
+					ww = int(cutinfo->p[j] * 10 + 0.001);
+					if (ww > maxw)
 						maxw = ww;
 				}
 			}
 
-			for (j=0; j<n; j++) 
+			for (j = 0; j < n; j++)
 			{
 				cutinfo->KP.wf[j] = 1;
 				if (cutinfo->KP.fcover[j]) continue;
 
-				ww = int(cutinfo->p[j]*10+0.001);
-				if (ww>maxw)
+				ww = int(cutinfo->p[j] * 10 + 0.001);
+				if (ww > maxw)
 					cutinfo->KP.fcover[j] = 1;
 			}
 
@@ -2162,25 +1955,25 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 			if (cutinfo->Lifting)
 			{
 				cutinfo->KP.nf = 0;
-				for (j=0; j<n; j++) 
+				for (j = 0; j < n; j++)
 				{
-					if (cutinfo->KP.fcover[j]>0)
+					if (cutinfo->KP.fcover[j] > 0)
 					{
 						cutinfo->KP.wf[j] = 1;
 						cutinfo->KP.indf[cutinfo->KP.nf] = j;
 						cutinfo->KP.nf++;
 					}
 				}
-				for (i1=0; i1<cutinfo->KP.nf; i1++)
+				for (i1 = 0; i1 < cutinfo->KP.nf; i1++)
 				{
 					j1 = cutinfo->KP.indf[i1];
 					cutinfo->KP.n = 0;
-					cutinfo->KP.W = int(cutinfo->pmax[i]*10-cutinfo->p[j1]*10+0.001);
-					for (j=0; j<n; j++) 
+					cutinfo->KP.W = int(cutinfo->pmax[i] * 10 - cutinfo->p[j1] * 10 + 0.001);
+					for (j = 0; j < n; j++)
 					{
-						if ((cutinfo->KP.fcover[j]>0)&&(j!=j1))
+						if ((cutinfo->KP.fcover[j] > 0) && (j != j1))
 						{
-							cutinfo->KP.w[cutinfo->KP.n] = int(cutinfo->p[j]*10+0.001);
+							cutinfo->KP.w[cutinfo->KP.n] = int(cutinfo->p[j] * 10 + 0.001);
 							cutinfo->KP.p[cutinfo->KP.n] = (double)cutinfo->KP.wf[j];
 							cutinfo->KP.ind[cutinfo->KP.n] = j;
 							cutinfo->KP.n++;
@@ -2191,27 +1984,27 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 #else
 					cutinfo->KP.Solve();
 #endif
-					if (((double)konta-cutinfo->KP.zopt)>1.001)
+					if (((double)konta - cutinfo->KP.zopt) > 1.001)
 					{
-						cutinfo->KP.wf[j1]=int((double)konta-cutinfo->KP.zopt+0.001);
+						cutinfo->KP.wf[j1] = int((double)konta - cutinfo->KP.zopt + 0.001);
 					}
 				}
 			}
 
 			// Save the cover inequality
-			k1=0;
-			cutinfo->rhs[0]=(double)konta;
-			cutinfo->beg[0]=k1;
-			for (j=0; j<n; j++)
+			k1 = 0;
+			cutinfo->rhs[0] = (double)konta;
+			cutinfo->beg[0] = k1;
+			for (j = 0; j < n; j++)
 			{
 				if (cutinfo->KP.fcover[j])
 				{
-					k = i*n+j;
+					k = i * n + j;
 					//ww=int(cutinfo->p[j]*10+0.001);
 					//printf("%d)  x(%d)=p=%lf   w=%d    x=1 *\n",k1,j,x[k],ww);
-					cutinfo->ind[k1]=k;
+					cutinfo->ind[k1] = k;
 					//cutinfo->val[k1]=1.0; // Prima 1.0
-					cutinfo->val[k1]=(double)cutinfo->KP.wf[j]; 
+					cutinfo->val[k1] = (double)cutinfo->KP.wf[j];
 					k1++;
 				}
 			}
@@ -2232,15 +2025,15 @@ int Cover_Inequalities(CUTINFOptr cutinfo)
 			//		cutinfo->val[k1]=1.0;
 			//		k1++;
 			//	}
-			cutinfo->beg[1]=k1;
-			cutinfo->nz=k1;
+			cutinfo->beg[1] = k1;
+			cutinfo->nz = k1;
 
 			return 1;
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -2251,49 +2044,49 @@ int Cover_InequalitiesCplex(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, cutnz;
-	long     i1,j1,k1;
+	long     i1, j1, k1;
 
-	long    konta,cover;
-	double  ww,minw,maxw;
-	double  lhs,maxlhs;
+	long    konta, cover;
+	double  ww, minw, maxw;
+	double  lhs, maxlhs;
 	double  ub;
 	double  zopt;
-	long    *fcover;
-	double  *ccover;
+	long* fcover;
+	double* ccover;
 
-	fcover = new long [n];
-	ccover = new double [n];
-	for (j=0; j<n; j++) 
+	fcover = new long[n];
+	ccover = new double[n];
+	for (j = 0; j < n; j++)
 	{
 		ind[j] = j;
 	}
 
 	// Check a cover for each knapsack constraint
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		// RHS: Knapsack Capacity
-		status = CPXchgrhs(cutinfo->env,cutinfo->lpkp,1,ind,&(cutinfo->pmax[i]));
-		status = CPXchgobj(cutinfo->env,cutinfo->lpkp,n,ind,x+i*n);
-		status = CPXmipopt(cutinfo->env,cutinfo->lpkp);
-		status = CPXgetobjval(cutinfo->env,cutinfo->lpkp,&zopt);
-		status = CPXgetx(cutinfo->env,cutinfo->lpkp,val,0,n-1);
+		status = CPXchgrhs(cutinfo->env, cutinfo->lpkp, 1, ind, &(cutinfo->pmax[i]));
+		status = CPXchgobj(cutinfo->env, cutinfo->lpkp, n, ind, x + i * n);
+		status = CPXmipopt(cutinfo->env, cutinfo->lpkp);
+		status = CPXgetobjval(cutinfo->env, cutinfo->lpkp, &zopt);
+		status = CPXgetx(cutinfo->env, cutinfo->lpkp, val, 0, n - 1);
 
 		konta = 0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (val[j]>0)
+			if (val[j] > 0)
 			{
 				fcover[j] = 1;
 				ccover[j] = 1.0;
@@ -2309,13 +2102,13 @@ int Cover_InequalitiesCplex(CUTINFOptr cutinfo)
 		// Check if a violated minimal cover exists
 		cover = -1;
 		maxlhs = 0.0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (val[j]>0) continue;
-			if ((zopt+x[i*n+j])>((double)konta+0.0001))
+			if (val[j] > 0) continue;
+			if ((zopt + x[i * n + j]) > ((double)konta + 0.0001))
 			{
-				lhs = zopt+x[i*n+j];
-				if (lhs>maxlhs)
+				lhs = zopt + x[i * n + j];
+				if (lhs > maxlhs)
 				{
 					lhs = maxlhs;
 					cover = j;
@@ -2323,7 +2116,7 @@ int Cover_InequalitiesCplex(CUTINFOptr cutinfo)
 			}
 		}
 
-		if (cover>-1)
+		if (cover > -1)
 		{
 			fcover[cover] = 1;
 			ccover[cover] = 1.0;
@@ -2334,20 +2127,20 @@ int Cover_InequalitiesCplex(CUTINFOptr cutinfo)
 
 			// Try to extend the cover
 			maxw = 0.0;
-			for (j=0; j<n; j++) 
+			for (j = 0; j < n; j++)
 			{
 				if (fcover[j])
 				{
-					if (cutinfo->p[j]>maxw)
+					if (cutinfo->p[j] > maxw)
 						maxw = cutinfo->p[j];
 				}
 			}
 
-			for (j=0; j<n; j++) 
+			for (j = 0; j < n; j++)
 			{
 				if (fcover[j]) continue;
 
-				if (cutinfo->p[j]>maxw)
+				if (cutinfo->p[j] > maxw)
 				{
 					fcover[j] = 1;
 					ccover[j] = 1.0;
@@ -2357,48 +2150,48 @@ int Cover_InequalitiesCplex(CUTINFOptr cutinfo)
 			// Try to lift the cover inequality found
 			if (cutinfo->Lifting)
 			{
-				for (j=0; j<n; j++) 
+				for (j = 0; j < n; j++)
 				{
-					if (fcover[j]>0)
+					if (fcover[j] > 0)
 					{
-						ub=1.0;
-						status = CPXchgbds(cutinfo->env,cutinfo->lpkp,1,&j,"L",&ub);
-						status = CPXmipopt(cutinfo->env,cutinfo->lpkp);
-						status = CPXgetobjval(cutinfo->env,cutinfo->lpkp,&zopt);
+						ub = 1.0;
+						status = CPXchgbds(cutinfo->env, cutinfo->lpkp, 1, &j, "L", &ub);
+						status = CPXmipopt(cutinfo->env, cutinfo->lpkp);
+						status = CPXgetobjval(cutinfo->env, cutinfo->lpkp, &zopt);
 
-						if (((double)konta-zopt)>1.001)
-							ccover[j]=int((double)konta-zopt+0.001);
+						if (((double)konta - zopt) > 1.001)
+							ccover[j] = int((double)konta - zopt + 0.001);
 
-						ub=0.0;
-						status = CPXchgbds(cutinfo->env,cutinfo->lpkp,1,&j,"L",&ub);
+						ub = 0.0;
+						status = CPXchgbds(cutinfo->env, cutinfo->lpkp, 1, &j, "L", &ub);
 					}
 				}
 			}
 
 			// Save the cover inequality
-			k1=0;
-			cutinfo->rhs[0]=(double)konta;
-			cutinfo->beg[0]=k1;
-			for (j=0; j<n; j++)
+			k1 = 0;
+			cutinfo->rhs[0] = (double)konta;
+			cutinfo->beg[0] = k1;
+			for (j = 0; j < n; j++)
 			{
 				if (fcover[j])
 				{
-					k = i*n+j;
-					cutinfo->ind[k1]=k;
-					cutinfo->val[k1]=(double)ccover[j]; 
+					k = i * n + j;
+					cutinfo->ind[k1] = k;
+					cutinfo->val[k1] = (double)ccover[j];
 					k1++;
 				}
 			}
 
-			cutinfo->beg[1]=k1;
-			cutinfo->nz=k1;
+			cutinfo->beg[1] = k1;
+			cutinfo->nz = k1;
 
 			return 1;
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -2409,53 +2202,53 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, cutnz;
-	long     i1,j1,k1;
-	long     konta,cover;
-	long     ww,minw,maxw;
-	double   lhs,maxlhs;
+	long     i1, j1, k1;
+	long     konta, cover;
+	long     ww, minw, maxw;
+	double   lhs, maxlhs;
 	Knapsack KP;
 
 	maxw = 0;
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
-		if (maxw<int(cutinfo->pmax[i]*10+0.001))
-			maxw = int(cutinfo->pmax[i]*10+0.001);
+		if (maxw<int(cutinfo->pmax[i] * 10 + 0.001))
+			maxw = int(cutinfo->pmax[i] * 10 + 0.001);
 	}
 
 	// Setup Knapsack data structure
-	KP.Malloc(n,maxw);
+	KP.Malloc(n, maxw);
 
 	// Check a cover for each knapsack constraint
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		KP.n = 0;
 		KP.nf = 0;
 		KP.zf = 0;
 		//KP.W = int(cutinfo->pmax[i]+0.001);
-		KP.W = int(cutinfo->pmax[i]*10+0.001);
+		KP.W = int(cutinfo->pmax[i] * 10 + 0.001);
 
-		for (j=0; j<n; j++) 
+		for (j = 0; j < n; j++)
 		{
-			KP.fcover[j]=0;
-			k = i*n+j;
-			if (x[k]<0.001) continue;
+			KP.fcover[j] = 0;
+			k = i * n + j;
+			if (x[k] < 0.001) continue;
 
-			if (x[k]>0.99999999)
+			if (x[k] > 0.99999999)
 			{
-				KP.fcover[j]=1;
-				KP.wf[KP.nf] = int(cutinfo->p[j]*10+0.001);
+				KP.fcover[j] = 1;
+				KP.wf[KP.nf] = int(cutinfo->p[j] * 10 + 0.001);
 				KP.indf[KP.nf] = j;
 				KP.zf = KP.zf + 1;
 				KP.W = KP.W - KP.wf[KP.nf];
@@ -2464,14 +2257,14 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 			else
 			{
 				//KP.w[KP.n] = int(cutinfo->p[j]+0.001);
-				KP.w[KP.n] = int(cutinfo->p[j]*10+0.001);
+				KP.w[KP.n] = int(cutinfo->p[j] * 10 + 0.001);
 				KP.p[KP.n] = x[k];
 				KP.ind[KP.n] = j;
 				KP.n++;
 			}
 		}
 
-		if (KP.n>0)
+		if (KP.n > 0)
 		{
 #ifdef ReMap
 			KP.SolveReMap();
@@ -2480,30 +2273,30 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 #endif
 			KP.zopt = KP.zopt + KP.zf;
 		}
-		else 
+		else
 			KP.zopt = KP.zf;
 
-		konta=KP.nf;
-		for (i1=0; i1<KP.n; i1++)
+		konta = KP.nf;
+		for (i1 = 0; i1 < KP.n; i1++)
 		{
-			if (KP.x[i1]>0)
+			if (KP.x[i1] > 0)
 			{
-				KP.fcover[KP.ind[i1]]=1;
+				KP.fcover[KP.ind[i1]] = 1;
 				konta++;
 			}
 		}
 
 		// Check if a violated minimal cover exists
-		cover=-1;
+		cover = -1;
 		//minw=100000000;
-		maxlhs=0.0;
-		for (i1=0; i1<KP.n; i1++)
+		maxlhs = 0.0;
+		for (i1 = 0; i1 < KP.n; i1++)
 		{
-			if (KP.x[i1]>0) continue;
-			if (((double)KP.zopt+KP.p[i1])>((double)konta+0.0001))
+			if (KP.x[i1] > 0) continue;
+			if (((double)KP.zopt + KP.p[i1]) > ((double)konta + 0.0001))
 			{
-				lhs=((double)KP.zopt+KP.p[i1]);
-				if (lhs>maxlhs)
+				lhs = ((double)KP.zopt + KP.p[i1]);
+				if (lhs > maxlhs)
 				{
 					lhs = maxlhs;
 					cover = KP.ind[i1];
@@ -2516,9 +2309,9 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 			}
 		}
 
-		if (cover>-1)
+		if (cover > -1)
 		{
-			KP.fcover[cover]=1;
+			KP.fcover[cover] = 1;
 
 			//printf("\n Knapsack  W=%d  zopt=%lf  zf=%lf\n",KP.W,KP.zopt,KP.zf);
 			////for (i1=0; i1<KP.n; i1++)
@@ -2526,23 +2319,23 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 
 			// Try to extend the cover
 			maxw = 0;
-			for (j=0; j<n; j++) 
+			for (j = 0; j < n; j++)
 			{
 				if (KP.fcover[j])
 				{
-					ww = int(cutinfo->p[j]*10+0.001);
-					if (ww>maxw)
+					ww = int(cutinfo->p[j] * 10 + 0.001);
+					if (ww > maxw)
 						maxw = ww;
 				}
 			}
 
-			for (j=0; j<n; j++) 
+			for (j = 0; j < n; j++)
 			{
 				KP.wf[j] = 1;
 				if (KP.fcover[j]) continue;
 
-				ww = int(cutinfo->p[j]*10+0.001);
-				if (ww>maxw)
+				ww = int(cutinfo->p[j] * 10 + 0.001);
+				if (ww > maxw)
 					KP.fcover[j] = 1;
 			}
 
@@ -2550,25 +2343,25 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 			if (cutinfo->Lifting)
 			{
 				KP.nf = 0;
-				for (j=0; j<n; j++) 
+				for (j = 0; j < n; j++)
 				{
-					if (KP.fcover[j]>0)
+					if (KP.fcover[j] > 0)
 					{
 						KP.wf[j] = 1;
 						KP.indf[KP.nf] = j;
 						KP.nf++;
 					}
 				}
-				for (i1=0; i1<KP.nf; i1++)
+				for (i1 = 0; i1 < KP.nf; i1++)
 				{
 					j1 = KP.indf[i1];
 					KP.n = 0;
-					KP.W = int(cutinfo->pmax[i]*10-cutinfo->p[j1]*10+0.001);
-					for (j=0; j<n; j++) 
+					KP.W = int(cutinfo->pmax[i] * 10 - cutinfo->p[j1] * 10 + 0.001);
+					for (j = 0; j < n; j++)
 					{
-						if ((KP.fcover[j]>0)&&(j!=j1))
+						if ((KP.fcover[j] > 0) && (j != j1))
 						{
-							KP.w[KP.n] = int(cutinfo->p[j]*10+0.001);
+							KP.w[KP.n] = int(cutinfo->p[j] * 10 + 0.001);
 							KP.p[KP.n] = (double)KP.wf[j];
 							KP.ind[KP.n] = j;
 							KP.n++;
@@ -2579,27 +2372,27 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 #else
 					KP.Solve();
 #endif
-					if (((double)konta-KP.zopt)>1.001)
+					if (((double)konta - KP.zopt) > 1.001)
 					{
-						KP.wf[j1]=int((double)konta-KP.zopt+0.001);
+						KP.wf[j1] = int((double)konta - KP.zopt + 0.001);
 					}
 				}
 			}
 
 			// Save the cover inequality
-			k1=0;
-			cutinfo->rhs[0]=(double)konta;
-			cutinfo->beg[0]=k1;
-			for (j=0; j<n; j++)
+			k1 = 0;
+			cutinfo->rhs[0] = (double)konta;
+			cutinfo->beg[0] = k1;
+			for (j = 0; j < n; j++)
 			{
 				if (KP.fcover[j])
 				{
-					k = i*n+j;
+					k = i * n + j;
 					//ww=int(cutinfo->p[j]*10+0.001);
 					//printf("%d)  x(%d)=p=%lf   w=%d    x=1 *\n",k1,j,x[k],ww);
-					cutinfo->ind[k1]=k;
+					cutinfo->ind[k1] = k;
 					//cutinfo->val[k1]=1.0; // Prima 1.0
-					cutinfo->val[k1]=(double)KP.wf[j]; 
+					cutinfo->val[k1] = (double)KP.wf[j];
 					k1++;
 				}
 			}
@@ -2620,44 +2413,44 @@ int Cover_InequalitiesOld(CUTINFOptr cutinfo)
 			//		cutinfo->val[k1]=1.0;
 			//		k1++;
 			//	}
-			cutinfo->beg[1]=k1;
-			cutinfo->nz=k1;
+			cutinfo->beg[1] = k1;
+			cutinfo->nz = k1;
 
 			return 1;
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 int CalcolaFlag2I(CUTINFOptr cutinfo)
 {
-	long j,j1,j0;
+	long j, j1, j0;
 
-	for (j1=0; j1<cutinfo->n; j1++)
+	for (j1 = 0; j1 < cutinfo->n; j1++)
 	{
 		cutinfo->Flag2I[j1] = 0;
 		cutinfo->Tupla2I[j1] = NULL;
 
-		if ((cutinfo->FDepA[j1]>0)||(cutinfo->nY[j1]>1))
-		//if ((cutinfo->nY[j1]>1))
+		if ((cutinfo->FDepA[j1] > 0) || (cutinfo->nY[j1] > 1))
+			//if ((cutinfo->nY[j1]>1))
 			continue;
 
-		for (j=0; j<cutinfo->n-1; j++) 
+		for (j = 0; j < cutinfo->n - 1; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepP[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepP[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepP[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepP[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]))>0.001)
+				if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0])) > 0.001)
 					continue;
 
-				if (cutinfo->u[j1] < (cutinfo->u[j]+cutinfo->u[j0]) - 0.001)
+				if (cutinfo->u[j1] < (cutinfo->u[j] + cutinfo->u[j0]) - 0.001)
 					continue;
 
 				cutinfo->Flag2I[j1]++;
@@ -2665,26 +2458,26 @@ int CalcolaFlag2I(CUTINFOptr cutinfo)
 			}
 		}
 
-		if (cutinfo->Flag2I[j1]==0)
+		if (cutinfo->Flag2I[j1] == 0)
 			continue;
 
-		cutinfo->Tupla2I[j1] = new struct tupla [cutinfo->Flag2I[j1]];
+		cutinfo->Tupla2I[j1] = new struct tupla[cutinfo->Flag2I[j1]];
 
-		cutinfo->Flag2I[j1]=0;
-		for (j=0; j<cutinfo->n-1; j++) 
+		cutinfo->Flag2I[j1] = 0;
+		for (j = 0; j < cutinfo->n - 1; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepP[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepP[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepP[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepP[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]))>0.001)
+				if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0])) > 0.001)
 					continue;
 
-				if (cutinfo->u[j1] < (cutinfo->u[j]+cutinfo->u[j0]) - 0.001)
+				if (cutinfo->u[j1] < (cutinfo->u[j] + cutinfo->u[j0]) - 0.001)
 					continue;
 
 				cutinfo->Tupla2I[j1][cutinfo->Flag2I[j1]].j1 = j;
@@ -2702,36 +2495,36 @@ int CalcolaFlag2I(CUTINFOptr cutinfo)
 
 int CalcolaFlag3I(CUTINFOptr cutinfo)
 {
-	long j,j1,j0,j2;
+	long j, j1, j0, j2;
 
-	for (j1=0; j1<cutinfo->n; j1++)
+	for (j1 = 0; j1 < cutinfo->n; j1++)
 	{
 		cutinfo->Flag3I[j1] = 0;
 		cutinfo->Tupla3I[j1] = NULL;
 
-		if ((cutinfo->FDepA[j1]>0)||(cutinfo->nY[j1]>1))
-		//if ((cutinfo->nY[j1]>1))
+		if ((cutinfo->FDepA[j1] > 0) || (cutinfo->nY[j1] > 1))
+			//if ((cutinfo->nY[j1]>1))
 			continue;
 
-		for (j=0; j<cutinfo->n-2; j++) 
+		for (j = 0; j < cutinfo->n - 2; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepP[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepP[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n-1; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n - 1; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepP[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepP[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				for (j2=j0+1; j2<cutinfo->n; j2++) 
+				for (j2 = j0 + 1; j2 < cutinfo->n; j2++)
 				{
-					if ((j2==j)||(j2==j1)||(j2==j0)||(cutinfo->FDepP[j2]>0)||(cutinfo->nY[j2]>1))
+					if ((j2 == j) || (j2 == j1) || (j2 == j0) || (cutinfo->FDepP[j2] > 0) || (cutinfo->nY[j2] > 1))
 						continue;
 
-					if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]+cutinfo->p[j2]))>0.001)
+					if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0] + cutinfo->p[j2])) > 0.001)
 						continue;
 
-					if (cutinfo->u[j1] < (cutinfo->u[j]+cutinfo->u[j0]+cutinfo->u[j2]) - 0.001)
+					if (cutinfo->u[j1] < (cutinfo->u[j] + cutinfo->u[j0] + cutinfo->u[j2]) - 0.001)
 						continue;
 
 					cutinfo->Flag3I[j1]++;
@@ -2740,31 +2533,31 @@ int CalcolaFlag3I(CUTINFOptr cutinfo)
 			}
 		}
 
-		if (cutinfo->Flag3I[j1]==0)
+		if (cutinfo->Flag3I[j1] == 0)
 			continue;
 
-		cutinfo->Tupla3I[j1] = new struct tupla [cutinfo->Flag3I[j1]];
+		cutinfo->Tupla3I[j1] = new struct tupla[cutinfo->Flag3I[j1]];
 
-		cutinfo->Flag3I[j1]=0;
-		for (j=0; j<cutinfo->n-2; j++) 
+		cutinfo->Flag3I[j1] = 0;
+		for (j = 0; j < cutinfo->n - 2; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepP[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepP[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n-1; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n - 1; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepP[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepP[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				for (j2=j0+1; j2<cutinfo->n; j2++) 
+				for (j2 = j0 + 1; j2 < cutinfo->n; j2++)
 				{
-					if ((j2==j)||(j2==j1)||(j2==j0)||(cutinfo->FDepP[j2]>0)||(cutinfo->nY[j2]>1))
+					if ((j2 == j) || (j2 == j1) || (j2 == j0) || (cutinfo->FDepP[j2] > 0) || (cutinfo->nY[j2] > 1))
 						continue;
 
-					if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]+cutinfo->p[j2]))>0.001)
+					if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0] + cutinfo->p[j2])) > 0.001)
 						continue;
 
-					if (cutinfo->u[j1] < (cutinfo->u[j]+cutinfo->u[j0]+cutinfo->u[j2]) - 0.001)
+					if (cutinfo->u[j1] < (cutinfo->u[j] + cutinfo->u[j0] + cutinfo->u[j2]) - 0.001)
 						continue;
 
 					cutinfo->Tupla3I[j1][cutinfo->Flag3I[j1]].j1 = j;
@@ -2784,31 +2577,31 @@ int CalcolaFlag3I(CUTINFOptr cutinfo)
 
 int CalcolaFlag2IRev(CUTINFOptr cutinfo)
 {
-	long j,j1,j0;
+	long j, j1, j0;
 
-	for (j1=0; j1<cutinfo->n; j1++)
+	for (j1 = 0; j1 < cutinfo->n; j1++)
 	{
 		cutinfo->Flag2IRev[j1] = 0;
 		cutinfo->Tupla2IRev[j1] = NULL;
 
-		if ((cutinfo->FDepP[j1]>0)||(cutinfo->nY[j1]>1))
-		//if ((cutinfo->nY[j1]>1))
+		if ((cutinfo->FDepP[j1] > 0) || (cutinfo->nY[j1] > 1))
+			//if ((cutinfo->nY[j1]>1))
 			continue;
 
-		for (j=0; j<cutinfo->n-1; j++) 
+		for (j = 0; j < cutinfo->n - 1; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepA[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepA[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepA[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepA[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]))>0.001)
+				if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0])) > 0.001)
 					continue;
 
-				if (cutinfo->u[j1] > (cutinfo->u[j]+cutinfo->u[j0]) - 0.001)
+				if (cutinfo->u[j1] > (cutinfo->u[j] + cutinfo->u[j0]) - 0.001)
 					continue;
 
 				cutinfo->Flag2IRev[j1]++;
@@ -2816,26 +2609,26 @@ int CalcolaFlag2IRev(CUTINFOptr cutinfo)
 			}
 		}
 
-		if (cutinfo->Flag2IRev[j1]==0)
+		if (cutinfo->Flag2IRev[j1] == 0)
 			continue;
 
-		cutinfo->Tupla2IRev[j1] = new struct tupla [cutinfo->Flag2IRev[j1]];
+		cutinfo->Tupla2IRev[j1] = new struct tupla[cutinfo->Flag2IRev[j1]];
 
-		cutinfo->Flag2IRev[j1]=0;
-		for (j=0; j<cutinfo->n-1; j++) 
+		cutinfo->Flag2IRev[j1] = 0;
+		for (j = 0; j < cutinfo->n - 1; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepA[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepA[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepA[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepA[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]))>0.001)
+				if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0])) > 0.001)
 					continue;
 
-				if (cutinfo->u[j1] > (cutinfo->u[j]+cutinfo->u[j0]) - 0.001)
+				if (cutinfo->u[j1] > (cutinfo->u[j] + cutinfo->u[j0]) - 0.001)
 					continue;
 
 				cutinfo->Tupla2IRev[j1][cutinfo->Flag2IRev[j1]].j1 = j;
@@ -2853,36 +2646,36 @@ int CalcolaFlag2IRev(CUTINFOptr cutinfo)
 
 int CalcolaFlag3IRev(CUTINFOptr cutinfo)
 {
-	long j,j1,j0,j2;
+	long j, j1, j0, j2;
 
-	for (j1=0; j1<cutinfo->n; j1++)
+	for (j1 = 0; j1 < cutinfo->n; j1++)
 	{
 		cutinfo->Flag3IRev[j1] = 0;
 		cutinfo->Tupla3IRev[j1] = NULL;
 
-		if ((cutinfo->FDepP[j1]>0)||(cutinfo->nY[j1]>1))
-		//if ((cutinfo->nY[j1]>1))
+		if ((cutinfo->FDepP[j1] > 0) || (cutinfo->nY[j1] > 1))
+			//if ((cutinfo->nY[j1]>1))
 			continue;
 
-		for (j=0; j<cutinfo->n-2; j++) 
+		for (j = 0; j < cutinfo->n - 2; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepA[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepA[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n-1; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n - 1; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepA[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepA[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				for (j2=j0+1; j2<cutinfo->n; j2++) 
+				for (j2 = j0 + 1; j2 < cutinfo->n; j2++)
 				{
-					if ((j2==j)||(j2==j1)||(j2==j0)||(cutinfo->FDepA[j2]>0)||(cutinfo->nY[j2]>1))
+					if ((j2 == j) || (j2 == j1) || (j2 == j0) || (cutinfo->FDepA[j2] > 0) || (cutinfo->nY[j2] > 1))
 						continue;
 
-					if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]+cutinfo->p[j2]))>0.001)
+					if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0] + cutinfo->p[j2])) > 0.001)
 						continue;
 
-					if (cutinfo->u[j1] > (cutinfo->u[j]+cutinfo->u[j0]+cutinfo->u[j2]) - 0.001)
+					if (cutinfo->u[j1] > (cutinfo->u[j] + cutinfo->u[j0] + cutinfo->u[j2]) - 0.001)
 						continue;
 
 					cutinfo->Flag3IRev[j1]++;
@@ -2891,31 +2684,31 @@ int CalcolaFlag3IRev(CUTINFOptr cutinfo)
 			}
 		}
 
-		if (cutinfo->Flag3IRev[j1]==0)
+		if (cutinfo->Flag3IRev[j1] == 0)
 			continue;
 
-		cutinfo->Tupla3IRev[j1] = new struct tupla [cutinfo->Flag3IRev[j1]];
+		cutinfo->Tupla3IRev[j1] = new struct tupla[cutinfo->Flag3IRev[j1]];
 
-		cutinfo->Flag3IRev[j1]=0;
-		for (j=0; j<cutinfo->n-2; j++) 
+		cutinfo->Flag3IRev[j1] = 0;
+		for (j = 0; j < cutinfo->n - 2; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepA[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepA[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<cutinfo->n-1; j0++) 
+			for (j0 = j + 1; j0 < cutinfo->n - 1; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepA[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepA[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				for (j2=j0+1; j2<cutinfo->n; j2++) 
+				for (j2 = j0 + 1; j2 < cutinfo->n; j2++)
 				{
-					if ((j2==j)||(j2==j1)||(j2==j0)||(cutinfo->FDepA[j2]>0)||(cutinfo->nY[j2]>1))
+					if ((j2 == j) || (j2 == j1) || (j2 == j0) || (cutinfo->FDepA[j2] > 0) || (cutinfo->nY[j2] > 1))
 						continue;
 
-					if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]+cutinfo->p[j2]))>0.001)
+					if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0] + cutinfo->p[j2])) > 0.001)
 						continue;
 
-					if (cutinfo->u[j1] > (cutinfo->u[j]+cutinfo->u[j0]+cutinfo->u[j2]) - 0.001)
+					if (cutinfo->u[j1] > (cutinfo->u[j] + cutinfo->u[j0] + cutinfo->u[j2]) - 0.001)
 						continue;
 
 					cutinfo->Tupla3IRev[j1][cutinfo->Flag3IRev[j1]].j1 = j;
@@ -2941,84 +2734,84 @@ int Precedence_Inequalities_2Item_Old(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, cutnz;
-	long     i1,j1,k1,kk;
-	long     j0,k0;
+	long     i1, j1, k1, kk;
+	long     j0, k0;
 
 	// Precedence search
-	for (j1=0; j1<n; j1++)
+	for (j1 = 0; j1 < n; j1++)
 	{
 		//if ((cutinfo->FDep[j1]>0)||(cutinfo->nY[j1]>1))
-		if ((cutinfo->Flag2I[j1]==0)||(cutinfo->nY[j1]>1))
+		if ((cutinfo->Flag2I[j1] == 0) || (cutinfo->nY[j1] > 1))
 			continue;
 
-		for (j=0; j<n-1; j++) 
+		for (j = 0; j < n - 1; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepP[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepP[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<n; j0++) 
+			for (j0 = j + 1; j0 < n; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepP[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepP[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]))>0.001)
+				if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0])) > 0.001)
 					continue;
 
-				if (cutinfo->u[j1] < (cutinfo->u[j]+cutinfo->u[j0]) - 0.001)
+				if (cutinfo->u[j1] < (cutinfo->u[j] + cutinfo->u[j0]) - 0.001)
 					continue;
 
 				//if ((fabs(cutinfo->u[j1]-(cutinfo->u[j]+cutinfo->u[j0]))<0.001)&&(j1>j)&&(j1>j0))
 				//	continue;
 
-				for (i1=0; i1<m; i1++)
+				for (i1 = 0; i1 < m; i1++)
 				{
-					k1 = i1*n+j1;
-					if (x[k1]<0.001) 
+					k1 = i1 * n + j1;
+					if (x[k1] < 0.001)
 						continue;
 
-					for (i=0; i<i1-1; i++)
+					for (i = 0; i < i1 - 1; i++)
 					{
-						k = i*n+j;
-						k0 = i*n+j0;
+						k = i * n + j;
+						k0 = i * n + j0;
 						cutvio = x[k] + x[k0];
-					
-						if ((cutvio+x[k1])>2.001)
+
+						if ((cutvio + x[k1]) > 2.001)
 						{
 							//printf("\n Precedence:  (j1,u,p)=(%3d,%5.1lf,%5.1lf)  (j,u,p)=(%3d,%5.1lf,%5.1lf)  Sprint: %d\n",
 							//	   j1,cutinfo->u[j1],cutinfo->p[j1],j,cutinfo->u[j],cutinfo->p[j],i1);
 							//for (i1=0; i1<KP.n; i1++)
 							//	printf("%d)  x(%d)=p=%lf   w=%d    x=%d \n",i1,KP.ind[i1],KP.p[i1],KP.w[i1],KP.x[i1]);
 
-							kk=0;
-							rhs[0]=2.0;
-							beg[0]=kk;
+							kk = 0;
+							rhs[0] = 2.0;
+							beg[0] = kk;
 
-							ind[kk]=k1;
-							val[kk]=1.0;
+							ind[kk] = k1;
+							val[kk] = 1.0;
 							kk++;
 
-							ind[kk]=k;
-							val[kk]=1.0;
+							ind[kk] = k;
+							val[kk] = 1.0;
 							kk++;
 
-							ind[kk]=k0;
-							val[kk]=1.0;
+							ind[kk] = k0;
+							val[kk] = 1.0;
 							kk++;
 
-							beg[1]=kk;
-							cutinfo->nz=kk;
+							beg[1] = kk;
+							cutinfo->nz = kk;
 
 							return 1;
 						}
@@ -3026,10 +2819,10 @@ int Precedence_Inequalities_2Item_Old(CUTINFOptr cutinfo)
 				}
 			}
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -3040,94 +2833,94 @@ int Precedence_Inequalities_3Item_Old(CUTINFOptr cutinfo)
 {
 	int status = 0;
 
-	int      numcols  = cutinfo->numcols;
+	int      numcols = cutinfo->numcols;
 	int      numtoadd = cutinfo->numtoadd;
-	int      numcuts  = cutinfo->num;
-	double   *x       = cutinfo->x;
-	int      *beg     = cutinfo->beg;
-	int      *ind     = cutinfo->ind;
-	double   *val     = cutinfo->val;
-	double   *rhs     = cutinfo->rhs;
-	long     n        = cutinfo->n;
-	long     m        = cutinfo->m;
+	int      numcuts = cutinfo->num;
+	double* x = cutinfo->x;
+	int* beg = cutinfo->beg;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
 	double   cutvio;
 	int      i, j, k, cutnz;
-	long     i1,j1,k1,kk;
-	long     j0,k0,j2,k2;
+	long     i1, j1, k1, kk;
+	long     j0, k0, j2, k2;
 
 	// Precedence search
-	for (j1=0; j1<n; j1++)
+	for (j1 = 0; j1 < n; j1++)
 	{
 		//if ((cutinfo->FDep[j1]>0)||(cutinfo->nY[j1]>1))
-		if ((cutinfo->Flag3I[j1]==0)||(cutinfo->nY[j1]>1))
+		if ((cutinfo->Flag3I[j1] == 0) || (cutinfo->nY[j1] > 1))
 			continue;
 
-		for (j=0; j<n-2; j++) 
+		for (j = 0; j < n - 2; j++)
 		{
-			if ((j==j1)||(cutinfo->FDepP[j]>0)||(cutinfo->nY[j]>1))
+			if ((j == j1) || (cutinfo->FDepP[j] > 0) || (cutinfo->nY[j] > 1))
 				continue;
 
-			for (j0=j+1; j0<n-1; j0++) 
+			for (j0 = j + 1; j0 < n - 1; j0++)
 			{
-				if ((j0==j)||(j0==j1)||(cutinfo->FDepP[j0]>0)||(cutinfo->nY[j0]>1))
+				if ((j0 == j) || (j0 == j1) || (cutinfo->FDepP[j0] > 0) || (cutinfo->nY[j0] > 1))
 					continue;
 
-				for (j2=j0+1; j2<n; j2++) 
+				for (j2 = j0 + 1; j2 < n; j2++)
 				{
-					if ((j2==j)||(j2==j1)||(j2==j0)||(cutinfo->FDepP[j2]>0)||(cutinfo->nY[j2]>1))
+					if ((j2 == j) || (j2 == j1) || (j2 == j0) || (cutinfo->FDepP[j2] > 0) || (cutinfo->nY[j2] > 1))
 						continue;
 
-					if (fabs(cutinfo->p[j1]-(cutinfo->p[j]+cutinfo->p[j0]+cutinfo->p[j2]))>0.001)
+					if (fabs(cutinfo->p[j1] - (cutinfo->p[j] + cutinfo->p[j0] + cutinfo->p[j2])) > 0.001)
 						continue;
 
-					if (cutinfo->u[j1] < (cutinfo->u[j]+cutinfo->u[j0]+cutinfo->u[j2]) - 0.001)
+					if (cutinfo->u[j1] < (cutinfo->u[j] + cutinfo->u[j0] + cutinfo->u[j2]) - 0.001)
 						continue;
 
 					//if ((fabs(cutinfo->u[j1]-(cutinfo->u[j]+cutinfo->u[j0]))<0.001)&&(j1>j)&&(j1>j0))
 					//	continue;
 
-					for (i1=0; i1<m; i1++)
+					for (i1 = 0; i1 < m; i1++)
 					{
-						k1 = i1*n+j1;
-						if (x[k1]<0.001) 
+						k1 = i1 * n + j1;
+						if (x[k1] < 0.001)
 							continue;
 
-						for (i=0; i<i1-1; i++)
+						for (i = 0; i < i1 - 1; i++)
 						{
-							k = i*n+j;
-							k0 = i*n+j0;
-							k2 = i*n+j2;
+							k = i * n + j;
+							k0 = i * n + j0;
+							k2 = i * n + j2;
 							cutvio = x[k] + x[k0] + x[k2];
-					
-							if ((cutvio+x[k1])>3.001)
+
+							if ((cutvio + x[k1]) > 3.001)
 							{
 								//printf("\n Precedence:  (j1,u,p)=(%3d,%5.1lf,%5.1lf)  (j,u,p)=(%3d,%5.1lf,%5.1lf)  Sprint: %d\n",
 								//	   j1,cutinfo->u[j1],cutinfo->p[j1],j,cutinfo->u[j],cutinfo->p[j],i1);
 								//for (i1=0; i1<KP.n; i1++)
 								//	printf("%d)  x(%d)=p=%lf   w=%d    x=%d \n",i1,KP.ind[i1],KP.p[i1],KP.w[i1],KP.x[i1]);
 
-								kk=0;
-								rhs[0]=3.0;
-								beg[0]=kk;
+								kk = 0;
+								rhs[0] = 3.0;
+								beg[0] = kk;
 
-								ind[kk]=k1;
-								val[kk]=1.0;
+								ind[kk] = k1;
+								val[kk] = 1.0;
 								kk++;
 
-								ind[kk]=k;
-								val[kk]=1.0;
+								ind[kk] = k;
+								val[kk] = 1.0;
 								kk++;
 
-								ind[kk]=k0;
-								val[kk]=1.0;
+								ind[kk] = k0;
+								val[kk] = 1.0;
 								kk++;
 
-								ind[kk]=k2;
-								val[kk]=1.0;
+								ind[kk] = k2;
+								val[kk] = 1.0;
 								kk++;
 
-								beg[1]=kk;
-								cutinfo->nz=kk;
+								beg[1] = kk;
+								cutinfo->nz = kk;
 
 								return 1;
 							}
@@ -3136,10 +2929,10 @@ int Precedence_Inequalities_3Item_Old(CUTINFOptr cutinfo)
 				}
 			}
 		}
-   }
+	}
 
-   return 0;
-} 
+	return 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -3148,14 +2941,14 @@ int Precedence_Inequalities_3Item_Old(CUTINFOptr cutinfo)
 //
 int  CplexObj::SetupKPDP(CUTINFOptr cutinfo)
 {
-	long i,maxw;
+	long i, maxw;
 
-	maxw=0;
-	for (i=0; i<cutinfo->m; i++)
-		if (maxw<int(cutinfo->pmax[i]*10+0.001))
-			maxw = int(cutinfo->pmax[i]*10+0.001);
+	maxw = 0;
+	for (i = 0; i < cutinfo->m; i++)
+		if (maxw<int(cutinfo->pmax[i] * 10 + 0.001))
+			maxw = int(cutinfo->pmax[i] * 10 + 0.001);
 
-	cutinfo->KP.Malloc(cutinfo->n,maxw);
+	cutinfo->KP.Malloc(cutinfo->n, maxw);
 
 	return 0;
 }
@@ -3171,31 +2964,31 @@ int  CplexObj::SetupKPMIP(CUTINFOptr cutinfo)
 	int nrows;
 	int objsen;
 	double objval;
-	double *obj;
-	double *rhs;
-	char *sense;
-	int *matbeg;
-	int *matcnt;
-	int *matind;
-	double *matval;
-	double *lb;
-	double *ub;
-	double *xt;
-	int *indices;
-	char *xctype;
-	double *rngval=NULL;
+	double* obj;
+	double* rhs;
+	char* sense;
+	int* matbeg;
+	int* matcnt;
+	int* matind;
+	double* matval;
+	double* lb;
+	double* ub;
+	double* xt;
+	int* indices;
+	char* xctype;
+	double* rngval = NULL;
 
 	// Auxiliary variables
-	long kc,knz;
+	long kc, knz;
 	long i;
 
-	if (env==NULL)
+	if (env == NULL)
 	{
 		printf("\nError... env not alocated...\n");
 		return 2;
 	}
 
-	cutinfo->lpkp = CPXcreateprob(env,&status,"lpkp");
+	cutinfo->lpkp = CPXcreateprob(env, &status, "lpkp");
 	if (status)
 	{
 		printf("\nError... CPXcreateprob...\n");
@@ -3204,7 +2997,7 @@ int  CplexObj::SetupKPMIP(CUTINFOptr cutinfo)
 	}
 
 	// Variables
-	ncols = cutinfo->n; 
+	ncols = cutinfo->n;
 
 	// Constraints
 	nrows = 1;
@@ -3212,71 +3005,71 @@ int  CplexObj::SetupKPMIP(CUTINFOptr cutinfo)
 	// Maximization
 	objsen = -1;
 
-	obj = new double [ncols];
-	rhs = new double [nrows];
-	sense = new char [nrows];
-	matbeg = new int [ncols+4];
-	matcnt = new int [ncols+4];
-	matind = new int [ncols];
-	matval = new double [ncols];
-	lb = new double [ncols];
-	ub = new double [ncols];
-	xt = new double [ncols];
-	indices = new int [ncols];
-	xctype = new char [ncols];
+	obj = new double[ncols];
+	rhs = new double[nrows];
+	sense = new char[nrows];
+	matbeg = new int[ncols + 4];
+	matcnt = new int[ncols + 4];
+	matind = new int[ncols];
+	matval = new double[ncols];
+	lb = new double[ncols];
+	ub = new double[ncols];
+	xt = new double[ncols];
+	indices = new int[ncols];
+	xctype = new char[ncols];
 
-	kc=0;
-	knz=0;
-	for (i=0;i<ncols;i++)
+	kc = 0;
+	knz = 0;
+	for (i = 0;i < ncols;i++)
 	{
 		// Objective function
-		obj[kc]=1.0;
+		obj[kc] = 1.0;
 
 		// Column
-		matbeg[kc]=knz;
-		matcnt[kc]=1;
+		matbeg[kc] = knz;
+		matcnt[kc] = 1;
 
-		matind[knz]=0;
-		matval[knz]=cutinfo->p[i];
+		matind[knz] = 0;
+		matval[knz] = cutinfo->p[i];
 		knz++;
-			
+
 		// Lower and upper bound
-		lb[kc]=0.;
-		ub[kc]=1.;
-		indices[kc]=kc;
-		xctype[kc]='B';
+		lb[kc] = 0.;
+		ub[kc] = 1.;
+		indices[kc] = kc;
+		xctype[kc] = 'B';
 
 		kc++;
 	}
 
-	matbeg[kc]=knz;
+	matbeg[kc] = knz;
 
 	// Right Hand Sides
-	rhs[0]=cutinfo->pmax[0];
-	sense[0]='L';
+	rhs[0] = cutinfo->pmax[0];
+	sense[0] = 'L';
 
-	rngval=NULL;
+	rngval = NULL;
 
 	// Load the data into Cplex
-    status = CPXcopylp(env,cutinfo->lpkp,ncols,nrows,objsen,obj,rhs,sense,matbeg,matcnt,matind,matval,lb,ub,rngval);
+	status = CPXcopylp(env, cutinfo->lpkp, ncols, nrows, objsen, obj, rhs, sense, matbeg, matcnt, matind, matval, lb, ub, rngval);
 
-	status = CPXchgprobtype(env,cutinfo->lpkp,CPXPROB_MILP);
-	status = CPXchgctype(env,cutinfo->lpkp,ncols,indices,xctype);
+	status = CPXchgprobtype(env, cutinfo->lpkp, CPXPROB_MILP);
+	status = CPXchgctype(env, cutinfo->lpkp, ncols, indices, xctype);
 	//status = CPXwriteprob(env,cutinfo->lpkp,"mysep.lp","LP");
 
 	// Free memory
-	delete [] obj;
-	delete [] rhs;
-	delete [] sense;
-	delete [] matbeg;
-	delete [] matcnt;
-	delete [] matind;
-	delete [] matval;
-	delete [] lb;
-	delete [] ub;
-	delete [] xt;
-	delete [] indices;
-	delete [] xctype;
+	delete[] obj;
+	delete[] rhs;
+	delete[] sense;
+	delete[] matbeg;
+	delete[] matcnt;
+	delete[] matind;
+	delete[] matval;
+	delete[] lb;
+	delete[] ub;
+	delete[] xt;
+	delete[] indices;
+	delete[] xctype;
 
 	return 0;
 }
