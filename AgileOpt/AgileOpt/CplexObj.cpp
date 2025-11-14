@@ -579,9 +579,10 @@ int CplexObj::CuttingPlane(long n, long m, double* u, double* p, double* pmax,
 
 	// Set up to use MIP callback 
 	//status = CPXsetcutcallbackfunc (env, mycutcallback, &cutinfo);
-	CPXLONG contextmask = CPX_CALLBACKCONTEXT_RELAXATION; // Solo separazione cut su LP relaxation
-	status = CPXcallbacksetfunc(env, lp, contextmask, myNewcutcallback, &cutinfo);
-    if (status) goto TERMINATE;
+	status = CPXsetusercutcallbackfunc  (env, myNewcutcallback, &cutinfo);
+	//CPXLONG contextmask = CPX_CALLBACKCONTEXT_RELAXATION; // Solo separazione cut su LP relaxation
+	//status = CPXcallbacksetfunc(env, lp, contextmask, myNewcutcallback, &cutinfo);
+    //if (status) goto TERMINATE;
 
 TERMINATE:
 
@@ -694,10 +695,10 @@ int CplexObj::CuttingPlaneHeu(long n, long m, double* u, double* p, double* pmax
 
 	// Set up to use MIP callback 
 	//status = CPXsetcutcallbackfunc (env, mycutcallback, &cutinfo);
-	//status = CPXsetcutcallbackfunc (env, myHeucutcallback, &cutinfo);
-	CPXLONG contextmask = CPX_CALLBACKCONTEXT_RELAXATION; // Solo separazione cut su LP relaxation
-	status = CPXcallbacksetfunc(env, lp, contextmask, myHeuCutGenericCallback, &cutinfo);
-	if ( status )  goto TERMINATE;
+	status = CPXsetusercutcallbackfunc  (env, myHeucutcallback, &cutinfo);
+	//CPXLONG contextmask = CPX_CALLBACKCONTEXT_RELAXATION; // Solo separazione cut su LP relaxation
+	//status = CPXcallbacksetfunc(env, lp, contextmask, myHeuCutGenericCallback, &cutinfo);
+	//if ( status )  goto TERMINATE;
 
 TERMINATE:
 
@@ -853,7 +854,6 @@ TERMINATE:
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
 //
-/*
 static int CPXPUBLIC myNewcutcallback (CPXCENVptr env,
                void       *cbdata,
                int        wherefrom,
@@ -1006,9 +1006,8 @@ TERMINATE:
 	return (status);
 
 } 
-*/
 
-
+/*
 int CPXPUBLIC myNewcutcallback(CPXCALLBACKCONTEXTptr context, void *cbhandle) {
     CUTINFOptr cutinfo = (CUTINFOptr)cbhandle;
     int status = 0;
@@ -1018,8 +1017,7 @@ int CPXPUBLIC myNewcutcallback(CPXCALLBACKCONTEXTptr context, void *cbhandle) {
     status = CPXcallbackgetinfotype(context, &wherefrom); // Questo restituisce informazioni di contesto
 
     // Esegui le elaborazioni solo se sei nel contesto di rilassamento LP (equivale al vecchio cut callback)
-    if (status == 0 && (wherefrom & CPX_CALLBACKCONTEXT_RELAXATION)) {
-        /* Recupera la soluzione corrente */
+    if (status == 0 && (wherefrom & CPX_CALLBACKCONTEXT_RELAXATION)) { 
         int numcols = cutinfo->numcols;
         status = CPXcallbackgetrelaxationpoint(context, cutinfo->x, 0, numcols - 1, NULL);
         if (status) {
@@ -1165,6 +1163,7 @@ int CPXPUBLIC myNewcutcallback(CPXCALLBACKCONTEXTptr context, void *cbhandle) {
 
     return status;
 }
+*/
 
 
 
@@ -1172,7 +1171,6 @@ int CPXPUBLIC myNewcutcallback(CPXCALLBACKCONTEXTptr context, void *cbhandle) {
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
 //
-/*
 static int CPXPUBLIC myHeucutcallback (CPXCENVptr env,
                void       *cbdata,
                int        wherefrom,
@@ -1244,8 +1242,8 @@ TERMINATE:
 	return (status);
 
 } 
-*/	
 
+/*
 int CPXPUBLIC myHeuCutGenericCallback(CPXCALLBACKCONTEXTptr context, void *userhandle)
 {
     CUTINFOptr cutinfo = (CUTINFOptr) userhandle;
@@ -1285,7 +1283,7 @@ int CPXPUBLIC myHeuCutGenericCallback(CPXCALLBACKCONTEXTptr context, void *userh
     }
 
     return status;
-}
+}*/
 
 
 
