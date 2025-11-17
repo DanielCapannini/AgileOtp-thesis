@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "CplexObj.h"
+#include "../lib/CplexObj.h"
 //#include "Knapsack.h"
 
 //-----------------------------------------------------------------------------

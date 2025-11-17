@@ -12,8 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "AgileOpt.h"
-#include "CplexObj.h"
+#include "../lib/AgileOpt.h"
+#include "../lib/CplexObj.h"
 //#include "Knapsack.h"
 
 //-----------------------------------------------------------------------------

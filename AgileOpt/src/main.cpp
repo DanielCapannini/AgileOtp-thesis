@@ -10,7 +10,7 @@
 //
 #include <stdio.h>
 #include <time.h>
-#include "AgileOpt\AgileOpt.h"
+#include "lib\AgileOpt.h"
 
 long MangiaPath(char *fname);
 

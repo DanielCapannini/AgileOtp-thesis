@@ -10,7 +10,7 @@
 //
 #include <stdio.h>
 
-#include "knapsack.h"
+#include "../lib/knapsack.h"
 
 //-----------------------------------------------------------------------------
 //  Constructor                                    
