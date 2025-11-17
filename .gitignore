@@ -18,6 +18,8 @@
 *.err
 *.xdc
 
+x64/
+
 ## Visual Studio files
 .vs/
 *.suo
