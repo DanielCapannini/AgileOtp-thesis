@@ -154,15 +154,15 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="AgileOpt.cpp" />
-    <ClCompile Include="CplexObj.cpp" />
-    <ClCompile Include="Knapsack.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="object\AgileOpt.cpp" />
+    <ClCompile Include="object\CplexObj.cpp" />
+    <ClCompile Include="object\Knapsack.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AgileOpt.h" />
-    <ClInclude Include="CplexObj.h" />
-    <ClInclude Include="Knapsack.h" />
+    <ClInclude Include="src\AgileOpt.h" />
+    <ClInclude Include="src\CplexObj.h" />
+    <ClInclude Include="src\Knapsack.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="My Inspector Results\r000mi3\r000mi3.insp" />
