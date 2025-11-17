@@ -12,6 +12,9 @@
 #include <time.h>
 #include "lib\AgileOpt.h"
 
+
+const bool  WITHOUT_CONSTRAINTS = true;
+
 long MangiaPath(char *fname);
 
 void main(void)
@@ -89,7 +92,12 @@ void main(void)
 	{
 		fscanf(fpro,"%s",fname);
 
-		Prob.ReadData(fname);
+		if (WITHOUT_CONSTRAINTS){
+			Prob.ReadDataWithoutConstraints(fname);
+		}
+		else {
+			Prob.ReadData(fname);
+		}
 		j=MangiaPath(fname);
 		fprintf(fout,"%-29s",fname+j);
 		fprintf(fout1,"%-29s",fname+j);
