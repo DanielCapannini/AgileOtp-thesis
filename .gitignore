@@ -19,6 +19,9 @@
 *.xdc
 
 x64/
+x86/
+**/x64/
+**/x86/
 
 ## Visual Studio files
 .vs/
