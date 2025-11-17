@@ -90,6 +90,7 @@ public:
 
 	// Read the instance from Text File "name"
 	int ReadData(const char *name); 
+	int ReadDataWithoutConstraints(const char *name);
 
 	// Optimize the Agile Schedule
 	int AgileOpt::Optimize(void);
