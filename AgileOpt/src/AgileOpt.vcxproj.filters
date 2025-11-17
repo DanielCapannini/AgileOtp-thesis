@@ -18,27 +18,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AgileOpt.cpp">
+    <ClCompile Include="object\AgileOpt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CplexObj.cpp">
+    <ClCompile Include="object\CplexObj.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Knapsack.cpp">
+    <ClCompile Include="object\Knapsack.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AgileOpt.h">
+    <ClInclude Include="src\AgileOpt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CplexObj.h">
+    <ClInclude Include="src\CplexObj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Knapsack.h">
+    <ClInclude Include="src\Knapsack.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
