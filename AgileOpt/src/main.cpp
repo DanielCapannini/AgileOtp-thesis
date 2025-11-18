@@ -12,11 +12,11 @@
 #include <time.h>
 #include "lib\AgileOpt.h"
 #include <windows.h>
-#include <processthreadsapi.h>   // (opzionale ma consigliato, contiene GetProcessTimes)
+#include <processthreadsapi.h>
 
 
 
-const bool  WITHOUT_CONSTRAINTS = false;
+const bool  WITHOUT_CONSTRAINTS = true;
 
 long MangiaPath(char *fname);
 
@@ -39,22 +39,21 @@ void main(void)
 	double TLimMIPb;
 	double TLimHEU;
 
+	fpro = fopen("..\\Agile.pro","r");
+
 	if( !WITHOUT_CONSTRAINTS ){
 		printf("Running AgileOpt without dependency constraints\n");
-		fpro = fopen("..\\Agile.pro","r");
 		fout = fopen("..\\Agile-LP.out","w");
 		fout1 = fopen("..\\Agile-Heu.out","w");
 		fout2 = fopen("..\\Agile-Pro.out","w");
 	}
 	else {
 		printf("Running AgileOpt with dependency constraints\n");
-		fpro = fopen("..\\AgileWithoutDep.pro","r");
-		fout = fopen("..\\AgileWitouthDep-LP.out","w");
+		fout = fopen("..\\AgileWithoutDep-LP.out","w");
 		fout1 = fopen("..\\AgileWithoutDep-Heu.out","w");
 		fout2 = fopen("..\\AgileWithoutDep-Pro.out","w");
 	}
-	
-
+	printf("\nsono arrivato -1\n");
 
 
 	// LP
@@ -95,6 +94,7 @@ void main(void)
 	fflush(fout2);
 	 
 	fscanf(fpro,"%d",&npro);
+	printf("\nsono arrivato 0\n");
 
 	// Set Time Limit
 	Prob.cfg.TimeLimit=10.;
@@ -107,6 +107,7 @@ void main(void)
 	for (i=0; i<npro; i++)
 	{
 		fscanf(fpro,"%s",fname);
+		printf("\nsono arrivato 1\n");
 
 		if (WITHOUT_CONSTRAINTS){
 			Prob.ReadDataWithoutConstraints(fname);
@@ -120,6 +121,7 @@ void main(void)
 		fprintf(fout2,"%-29s",fname+j);
 		fprintf(Prob.ferr,"\n%s:\n\n",fname);
 		fflush(Prob.ferr);
+		printf("\nsono arrivato 2\n");
 
 		// Print instance characteristics
 		kount1=0;
