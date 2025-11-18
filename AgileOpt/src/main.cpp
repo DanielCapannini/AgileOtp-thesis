@@ -16,7 +16,7 @@
 
 
 
-const bool  WITHOUT_CONSTRAINTS = true;
+const bool  WITHOUT_CONSTRAINTS = false;
 
 long MangiaPath(char *fname);
 
@@ -39,10 +39,23 @@ void main(void)
 	double TLimMIPb;
 	double TLimHEU;
 
-	fpro = fopen("..\\Agile.pro","r");
-	fout = fopen("..\\Agile-LP.out","w");
-	fout1 = fopen("..\\Agile-Heu.out","w");
-	fout2 = fopen("..\\Agile-Pro.out","w");
+	if( !WITHOUT_CONSTRAINTS ){
+		printf("Running AgileOpt without dependency constraints\n");
+		fpro = fopen("..\\Agile.pro","r");
+		fout = fopen("..\\Agile-LP.out","w");
+		fout1 = fopen("..\\Agile-Heu.out","w");
+		fout2 = fopen("..\\Agile-Pro.out","w");
+	}
+	else {
+		printf("Running AgileOpt with dependency constraints\n");
+		fpro = fopen("..\\AgileWithoutDep.pro","r");
+		fout = fopen("..\\AgileWitouthDep-LP.out","w");
+		fout1 = fopen("..\\AgileWithoutDep-Heu.out","w");
+		fout2 = fopen("..\\AgileWithoutDep-Pro.out","w");
+	}
+	
+
+
 
 	// LP
 	fprintf(fout,"\n                              ");
