@@ -279,115 +279,146 @@ void SkipList(FILE *fin)
 //
 int AgileOpt::ReadDataWithoutConstraints(const char *name)
 {
-    FILE *fin;
-    long nr;
-    long i, j;
-    long nlist;
-    long *list;
-    double aux;
-    char Dep[8];
+	FILE *fin;
+	long nr,nr1;
+	long i,j,i1,j1,i2;
+	long nlist;
+	long *list;
+	double aux;
+	char Dep[8];
 
-    fin = fopen(name, "r");
+	fin=fopen(name,"r");
 
-    // Read the number of user stories and of sprints
-    fscanf(fin, "%d %d", &n, &m);
+	// Read the number of user stories and of sprints
+	fscanf(fin,"%d %d",&n,&m);
 
-    // Read Utility
-    u = new double[n];
-    for (j = 0; j < n; j++)
-        fscanf(fin, "%lf%", &(u[j]));
+	// Read Utility
+	u = new double [n];
+	for (j=0; j<n; j++)
+		fscanf(fin,"%lf%",&(u[j]));
 
-    // Read Criticality Risk
-    rcr = new double[n];
-    ur = new double[n];
-    for (j = 0; j < n; j++)
-    {
-        fscanf(fin, "%lf%", &(rcr[j]));
-        ur[j] = u[j] * rcr[j];
-    }
+	// Read Criticality Risk
+	rcr = new double [n];
+	ur = new double [n];
+	for (j=0; j<n; j++)
+	{
+		fscanf(fin,"%lf%",&(rcr[j]));
+		ur[j] = u[j]*rcr[j];
+	}
+	// Read Uncertainty Risk
+	run = new double [n];
+	for (j=0; j<n; j++)
+		fscanf(fin,"%lf%",&(run[j]));
 
-    // Read Uncertainty Risk
-    run = new double[n];
-    for (j = 0; j < n; j++)
-        fscanf(fin, "%lf%", &(run[j]));
+	// Read Number of Story Points
+	p = new double [n];
+	pr = new double [n];
+	for (j=0; j<n; j++)
+	{
+		fscanf(fin,"%lf%",&(p[j]));
+		pr[j]=p[j]*run[j];
+	}
 
-    // Read Number of Story Points
-    p = new double[n];
-    pr = new double[n];
-    for (j = 0; j < n; j++)
-    {
-        fscanf(fin, "%lf%", &(p[j]));
-        pr[j] = p[j] * run[j];
-    }
+	// Read Affinity
+	a = new double [n];
+	nY = new long [n];
+	Y = new long* [n];
+	list = new long [n];
+	for (j=0; j<n; j++)
+	{
+		a[j] = 0.0;
+		nY[j] = 1;
+		Y[j] = new long [n];
+		Y[j][0] = j;  // We suppose that Yj containts at least j...
+	}
+	fscanf(fin,"%d",&nr);
+	for (i=0; i<nr; i++)
+	{
+		nlist=0;
+		//fscanf(fin,"%lf %d",&aux,&nr1);
+		fscanf(fin,"%lf",&aux);
+		GetList(fin,&nlist,list);
+		//for (i1=0; i1<nr1; i1++)
+		//{
+		//	fscanf(fin,"%d",&j1);
+		//	a[j1]=aux;
+		//	list[nlist]=j1;
+		//	nlist++;
+		//}
+		for (i1=0; i1<nlist; i1++)
+		{
+			j1=list[i1];
+			nY[j1]=nlist;
+			a[j1]=aux;
+			for (i2=0; i2<nlist; i2++)
+				Y[j1][i2]=list[i2];
+		}
+	}
+	delete [] list;
 
-    // --------------------------------------------------------
-    // IGNORA COMPLETAMENTE I VINCOLI DI SIMILARITÀ Y
-    // --------------------------------------------------------
-    a = new double[n];
-    nY = new long[n];
-    Y = new long*[n];
+	// Read AND/OR Dependancy
+	nD = new long [n];
+	D = new long* [n];
+	nUOR = new long [n];
+	UOR = new long* [n];
+	nUAND = new long [n];
+	UAND = new long* [n];
+	FDepA = new long [n];
+	FDepP = new long [n];
+	for (j=0; j<n; j++)
+	{
+		nD[j] = 0;
+		D[j] = new long [n];
+		nUOR[j] = 0;
+		UOR[j] = new long [n];
+		nUAND[j] = 0;
+		UAND[j] = new long [n];
+		FDepA[j] = 0;
+		FDepP[j] = 0;
+	}
+	fscanf(fin,"%d",&nr);
+	for (i=0; i<nr; i++)
+	{
+		fscanf(fin,"%d %s",&j1,Dep);
+		GetList(fin,&(nD[j1]),D[j1]);
 
-    for (j = 0; j < n; j++)
-    {
-        a[j] = 0.0;
-        nY[j] = 1;                  // ogni storia è sola
-        Y[j] = new long[1];
-        Y[j][0] = j;                // nessuna similarità salvata
-    }
+		/*
+		FDepA[j1] = 1;
+		if (strcmp(Dep,"OR")==0)
+		{
+			nUOR[j1] = nD[j1];
+			for (i1=0; i1<nD[j1]; i1++)
+			{
+				UOR[j1][i1] = D[j1][i1];
+				FDepP[D[j1][i1]] = 1;
+			}
+		}
+		else if (strcmp(Dep,"AND")==0)
+		{
+			nUAND[j1] = nD[j1];
+			for (i1=0; i1<nD[j1]; i1++)
+			{
+				UAND[j1][i1] = D[j1][i1];
+				FDepP[D[j1][i1]] = 1;
+			}
+		}
+		else 
+		{
+			printf("\nERROR... while reading dependency\n");
+			fprintf(ferr,"\nERROR... while reading dependency\n");
+			exit(1);
+		}*/
+	}
 
-    // Legge il numero ma SALTA i gruppi
-    fscanf(fin, "%d", &nr);
-    for (i = 0; i < nr; i++)
-    {
-        double dummy;
-        fscanf(fin, "%lf", &dummy);
-        SkipList(fin);              // funzione che ignora le liste
-    }
+	// Read Sprint Capacities
+	//m=10;
+	pmax = new double [m];
+	for (i=0; i<m; i++)
+		fscanf(fin,"%lf",&(pmax[i]));
 
-    // --------------------------------------------------------
-    // IGNORA COMPLETAMENTE LE DIPENDENZE D/OR/AND
-    // --------------------------------------------------------
-    nD = new long[n];
-    D = new long*[n];
-    nUOR = new long[n];
-    UOR = new long*[n];
-    nUAND = new long[n];
-    UAND = new long*[n];
-    FDepA = new long[n];
-    FDepP = new long[n];
+ 	fclose(fin);
 
-    for (j = 0; j < n; j++)
-    {
-        nD[j] = 0;
-        D[j] = new long[1];
-
-        nUOR[j] = 0;
-        UOR[j] = new long[1];
-
-        nUAND[j] = 0;
-        UAND[j] = new long[1];
-
-        FDepA[j] = 0;
-        FDepP[j] = 0;
-    }
-
-    // Legge il numero di dipendenze ma SALTA tutto
-    fscanf(fin, "%d", &nr);
-    for (i = 0; i < nr; i++)
-    {
-        int dummy_j;
-        fscanf(fin, "%d %s", &dummy_j, Dep);
-        SkipList(fin);              // salta la lista di dipendenze
-    }
-
-
-    // Read Sprint Capacities (questo lo teniamo)
-    pmax = new double[m];
-    for (i = 0; i < m; i++)
-        fscanf(fin, "%lf", &(pmax[i]));
-
-    fclose(fin);
-    return 0;
+	return 0;
 }
 
 

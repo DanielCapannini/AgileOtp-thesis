@@ -17,11 +17,15 @@
 *.sbr
 *.err
 *.xdc
+*.ipdb
+*.iobj
+*.recipe
 
 x64/
 x86/
 **/x64/
 **/x86/
+
 
 ## Visual Studio files
 .vs/

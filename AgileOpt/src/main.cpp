@@ -13,7 +13,7 @@
 #include "lib\AgileOpt.h"
 
 
-const bool  WITHOUT_CONSTRAINTS = true;
+const bool  WITHOUT_CONSTRAINTS = false;
 
 long MangiaPath(char *fname);
 
