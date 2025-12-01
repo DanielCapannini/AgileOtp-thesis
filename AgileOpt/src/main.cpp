@@ -16,7 +16,14 @@
 
 
 
-const bool  WITHOUT_CONSTRAINTS = true;
+const bool  WITHOUT_CONSTRAINTS = true; //FLAG TO RUN THE PROBLEM WITHOUT DEPENDENCY CONSTRAINTS
+
+const bool MODIFY_DATA_FOR_TESTING = false; // FLAG TO USE TO USE THE CAPACITY AND SPRINT NUMBER CHANGES
+
+const bool GROUP_SECOND_GOAL_SPRINTS = false; // FLAG TO USE TO GROUP THE SPRITTS OF THE SECOND HALF OF THE PROJECT IN 2 BY 2
+
+int number_of_sprints_to_reduce = 2; // number of sprints to modify for testing
+float percentage_of_reduced_story_points_per_modified_sprint = 0.2f; // each modified sprint will have its capacity reduced by 2 story points
 
 long MangiaPath(char *fname);
 
@@ -109,12 +116,8 @@ void main(void)
 		fscanf(fpro,"%s",fname);
 		printf("\nsono arrivato 1\n");
 
-		if (WITHOUT_CONSTRAINTS){
-			Prob.ReadDataWithoutConstraints(fname);
-		}
-		else {
-			Prob.ReadData(fname);
-		}
+		Prob.ReadData(fname);
+
 		j=MangiaPath(fname);
 		fprintf(fout,"%-29s",fname+j);
 		fprintf(fout1,"%-29s",fname+j);
@@ -127,12 +130,40 @@ void main(void)
 		kount1=0;
 		kount2=0;
 		kount3=0;
+		if(WITHOUT_CONSTRAINTS){
+			for (j=0; j<Prob.n; j++)
+			{
+				Prob.nY[j]=1;
+				Prob.nUOR[j]=0;
+				Prob.nUAND[j]=0;
+			}
+		}
 		for (j=0; j<Prob.n; j++)
 		{
 			if (Prob.nY[j]>1) kount1++;
 			if (Prob.nUOR[j]>0) kount2++;
 			if (Prob.nUAND[j]>0) kount3++;
 		}
+		
+		if (MODIFY_DATA_FOR_TESTING) {
+			if(number_of_sprints_to_reduce > Prob.m) {
+				Prob.m = 0;
+			}else {
+				Prob.m = Prob.m - number_of_sprints_to_reduce;
+			}
+			for(j = 0; j<Prob.m; j++) {
+				Prob.pmax[j] = Prob.pmax[j] * (1.0 - percentage_of_reduced_story_points_per_modified_sprint);
+			}
+		}
+
+		if (GROUP_SECOND_GOAL_SPRINTS) {
+			int half_m = (Prob.m / 2) %2 ==0 ? Prob.m /2 : (Prob.m /2)+1;
+			Prob.m = Prob.m - half_m + (half_m /2);
+			for(j = 0; j < half_m; j+=2) {
+				Prob.pmax[half_m + ((j-1)/2) +1] = Prob.pmax[half_m + j] + Prob.pmax[half_m + j +1];
+			}
+		}
+
 		fprintf(fout2,"%8d",Prob.n);
 		fprintf(fout2,"%8d",Prob.m);
 		fprintf(fout2,"%8d",kount1);
@@ -160,7 +191,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		double dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		double dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 		zlp = Prob.Zopt;
 
@@ -192,7 +223,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 		fprintf(fout1,"%10.1lf",Prob.Zheu);
 		fprintf(fout1,"%8.2lf",dt);
@@ -217,7 +248,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 
 		fprintf(fout1,"%10.1lf",Prob.Zheu);
@@ -245,7 +276,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 		fprintf(fout1,"%10.1lf",Prob.Zheu);
 		fprintf(fout1,"%8.2lf",dt);
@@ -275,7 +306,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 		fprintf(fout,"%10.1lf",Prob.Zopt);
 		fprintf(fout,"%7.2lf",Prob.Gap);
@@ -302,7 +333,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 		fprintf(fout,"%10.1lf",Prob.Zopt);
 		fprintf(fout,"%7.2lf",Prob.Gap);
@@ -329,7 +360,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 		fprintf(fout,"%10.1lf",Prob.Zopt);
 		fprintf(fout,"%7.2lf",Prob.Gap);
@@ -356,7 +387,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 
 		fprintf(fout,"%10.1lf",Prob.Zopt);
@@ -384,7 +415,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e7;
+		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
 
 		fprintf(fout,"%10.1lf",Prob.Zopt);
 		fprintf(fout,"%7.2lf",Prob.Gap);
