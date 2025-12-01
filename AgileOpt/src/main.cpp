@@ -48,17 +48,27 @@ void main(void)
 
 	fpro = fopen("..\\Agile.pro","r");
 
+	#include <string>
+
+	std::string copy_of_filename;
+
+	if(!MODIFY_DATA_FOR_TESTING && !GROUP_SECOND_GOAL_SPRINTS)
+		copy_of_filename = "standard";
+	else
+		copy_of_filename = "modified";
+
+
 	if( !WITHOUT_CONSTRAINTS ){
 		printf("Running AgileOpt without dependency constraints\n");
 		fout = fopen("..\\Agile-LP.out","w");
 		fout1 = fopen("..\\Agile-Heu.out","w");
-		fout2 = fopen("..\\Agile-Pro.out","w");
+		fout2 = fopen(("..\\Agile " + copy_of_filename + "-Pro.out").c_str(),"w");
 	}
 	else {
 		printf("Running AgileOpt with dependency constraints\n");
 		fout = fopen("..\\AgileWithoutDep-LP.out","w");
 		fout1 = fopen("..\\AgileWithoutDep-Heu.out","w");
-		fout2 = fopen("..\\AgileWithoutDep-Pro.out","w");
+		fout2 = fopen(("..\\AgileWithoutDep " + copy_of_filename + "-Pro.out").c_str(),"w");
 	}
 	printf("\nsono arrivato -1\n");
 
@@ -97,7 +107,7 @@ void main(void)
 
 	// Print instance characteristics
 	fprintf(fout2,"Istanza                         ");
-	fprintf(fout2,"    n       m      nY    |U^OR|  |U^AND|   \n");
+	fprintf(fout2,"    n       m      min(pmax)      max(pmax)      avg(pmax)      nY    |U^OR|  |U^AND|   \n");
 	fflush(fout2);
 	 
 	fscanf(fpro,"%d",&npro);
@@ -122,6 +132,7 @@ void main(void)
 		fprintf(fout,"%-29s",fname+j);
 		fprintf(fout1,"%-29s",fname+j);
 		fprintf(fout2,"%-29s",fname+j);
+		fprintf(fout3,"%-29s",fname+j);
 		fprintf(Prob.ferr,"\n%s:\n\n",fname);
 		fflush(Prob.ferr);
 		printf("\nsono arrivato 2\n");
@@ -164,8 +175,25 @@ void main(void)
 			}
 		}
 
+		double min_pmax = Prob.pmax[0];
+		double max_pmax = Prob.pmax[0];
+		double avg_pmax = Prob.pmax[0];
+
+		for (int i = 1; i < Prob.m; i++) {
+			if (Prob.pmax[i] < min_pmax)
+				min_pmax = Prob.pmax[i];
+			if (Prob.pmax[i] > max_pmax)
+				max_pmax = Prob.pmax[i];
+			sum_pmax += Prob.pmax[i];
+		}
+
+		double avg_pmax = sum_pmax / Prob.m;
+
 		fprintf(fout2,"%8d",Prob.n);
 		fprintf(fout2,"%8d",Prob.m);
+		fprintf(fout2,"%f",(float)min_pmax);
+		fprintf(fout2,"%f",(float)max_pmax);
+		fprintf(fout2,"%f",(float)avg_pmax);
 		fprintf(fout2,"%8d",kount1);
 		fprintf(fout2,"%8d",kount2);
 		fprintf(fout2,"%8d\n",kount3);
