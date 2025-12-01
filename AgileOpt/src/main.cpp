@@ -144,7 +144,6 @@ void main(void)
 		if(WITHOUT_CONSTRAINTS){
 			for (j=0; j<Prob.n; j++)
 			{
-				Prob.nY[j]=1;
 				Prob.nUOR[j]=0;
 				Prob.nUAND[j]=0;
 			}
