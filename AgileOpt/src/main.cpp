@@ -13,16 +13,18 @@
 #include "lib\AgileOpt.h"
 #include <windows.h>
 #include <processthreadsapi.h>
+#include <string>
+#include <iomanip>
 
 
 
-const bool  WITHOUT_CONSTRAINTS = true; //FLAG TO RUN THE PROBLEM WITHOUT DEPENDENCY CONSTRAINTS
+const bool  WITHOUT_CONSTRAINTS = false; //FLAG TO RUN THE PROBLEM WITHOUT DEPENDENCY CONSTRAINTS
 
 const bool MODIFY_DATA_FOR_TESTING = false; // FLAG TO USE TO USE THE CAPACITY AND SPRINT NUMBER CHANGES
 
 const bool GROUP_SECOND_GOAL_SPRINTS = false; // FLAG TO USE TO GROUP THE SPRITTS OF THE SECOND HALF OF THE PROJECT IN 2 BY 2
 
-int number_of_sprints_to_reduce = 2; // number of sprints to modify for testing
+int number_of_sprints_to_reduce = 0; // number of sprints to modify for testing
 float percentage_of_reduced_story_points_per_modified_sprint = 0.2f; // each modified sprint will have its capacity reduced by 2 story points
 
 long MangiaPath(char *fname);
@@ -30,7 +32,6 @@ long MangiaPath(char *fname);
 void main(void)
 {
 	FILE *fpro;
-	FILE *fout;
 	FILE *fout1;
 	FILE *fout2;
 	AgileOpt Prob;
@@ -48,8 +49,6 @@ void main(void)
 
 	fpro = fopen("..\\Agile.pro","r");
 
-	#include <string>
-
 	std::string copy_of_filename;
 
 	if(!MODIFY_DATA_FOR_TESTING && !GROUP_SECOND_GOAL_SPRINTS)
@@ -60,36 +59,16 @@ void main(void)
 
 	if( !WITHOUT_CONSTRAINTS ){
 		printf("Running AgileOpt without dependency constraints\n");
-		fout = fopen("..\\Agile-LP.out","w");
 		fout1 = fopen("..\\Agile-Heu.out","w");
 		fout2 = fopen(("..\\Agile " + copy_of_filename + "-Pro.out").c_str(),"w");
 	}
 	else {
 		printf("Running AgileOpt with dependency constraints\n");
-		fout = fopen("..\\AgileWithoutDep-LP.out","w");
 		fout1 = fopen("..\\AgileWithoutDep-Heu.out","w");
 		fout2 = fopen(("..\\AgileWithoutDep " + copy_of_filename + "-Pro.out").c_str(),"w");
 	}
 	printf("\nsono arrivato -1\n");
 
-
-	// LP
-	fprintf(fout,"\n                              ");
-	fprintf(fout,"                   Cplex                 ");
-	fprintf(fout,"             Cplex + LagrHeu             ");
-	fprintf(fout,"                 Sentinel                ");
-	fprintf(fout,"                   Pred                  ");
-	fprintf(fout,"                   Cover                 ");
-	fprintf(fout,"               Lifted Cover            \n");
-
-	fprintf(fout,"Istanza                         ");
-	fprintf(fout,"  Zopt    Gap    Nodes   NCuts    Time   ");
-	fprintf(fout,"  Zopt    Gap    Nodes   NCuts    Time   ");
-	fprintf(fout,"  Zopt    Gap    Nodes   NCuts    Time   ");
-	fprintf(fout,"  Zopt    Gap    Nodes   NCuts    Time   ");
-	fprintf(fout,"  Zopt    Gap    Nodes   NCuts    Time   ");
-	fprintf(fout,"  Zopt    Gap    Nodes   NCuts    Time   \n");
-	fflush(fout);
 
 	// Heuristics
 	fprintf(fout1,"\n                              ");
@@ -107,7 +86,7 @@ void main(void)
 
 	// Print instance characteristics
 	fprintf(fout2,"Istanza                         ");
-	fprintf(fout2,"    n       m      min(pmax)      max(pmax)      avg(pmax)      nY    |U^OR|  |U^AND|   \n");
+	fprintf(fout2," &    &   n &      m &     min(pmax) &     max(pmax) &     avg(pmax) &     nY &    |U^OR| &  |U^AND| \\\\  \n");
 	fflush(fout2);
 	 
 	fscanf(fpro,"%d",&npro);
@@ -128,11 +107,11 @@ void main(void)
 
 		Prob.ReadData(fname);
 
+		
+
 		j=MangiaPath(fname);
-		fprintf(fout,"%-29s",fname+j);
-		fprintf(fout1,"%-29s",fname+j);
-		fprintf(fout2,"%-29s",fname+j);
-		fprintf(fout3,"%-29s",fname+j);
+		fprintf(fout1,"%-29s  &     & ",fname+j);
+		fprintf(fout2,"%-29s  &     & ",fname+j);
 		fprintf(Prob.ferr,"\n%s:\n\n",fname);
 		fflush(Prob.ferr);
 		printf("\nsono arrivato 2\n");
@@ -176,7 +155,7 @@ void main(void)
 
 		double min_pmax = Prob.pmax[0];
 		double max_pmax = Prob.pmax[0];
-		double avg_pmax = Prob.pmax[0];
+		double sum_pmax = Prob.pmax[0];
 
 		for (int i = 1; i < Prob.m; i++) {
 			if (Prob.pmax[i] < min_pmax)
@@ -188,14 +167,14 @@ void main(void)
 
 		double avg_pmax = sum_pmax / Prob.m;
 
-		fprintf(fout2,"%8d",Prob.n);
-		fprintf(fout2,"%8d",Prob.m);
-		fprintf(fout2,"%f",(float)min_pmax);
-		fprintf(fout2,"%f",(float)max_pmax);
-		fprintf(fout2,"%f",(float)avg_pmax);
-		fprintf(fout2,"%8d",kount1);
-		fprintf(fout2,"%8d",kount2);
-		fprintf(fout2,"%8d\n",kount3);
+		fprintf(fout2,"%8d & ",Prob.n);
+		fprintf(fout2,"%8d & ",Prob.m);
+		fprintf(fout2,"%8.1f & ",min_pmax);
+		fprintf(fout2,"%8.1f & ",max_pmax);
+		fprintf(fout2,"%8.1f & ",avg_pmax);
+		fprintf(fout2,"%8d & ",kount1);
+		fprintf(fout2,"%8d & ",kount2);
+		fprintf(fout2,"%8d \\\\ \n",kount3);
 		fflush(fout2);
 
 		// Cplex
@@ -218,16 +197,10 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		double dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
+		double dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
 
 		zlp = Prob.Zopt;
 
-		fprintf(fout,"%10.1lf",Prob.Zopt);
-		fprintf(fout,"%7.2lf",Prob.Gap);
-		fprintf(fout,"%8d",Prob.Nodes);
-		fprintf(fout,"%8d",Prob.Cuts);
-		fprintf(fout,"%8.2lf",dt);
-		fflush(fout);
 
 		fprintf(fout1,"%10.1lf",Prob.Zopt);
 		fprintf(fout1,"%7.2lf",Prob.Gap);
@@ -250,7 +223,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
+		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
 
 		fprintf(fout1,"%10.1lf",Prob.Zheu);
 		fprintf(fout1,"%8.2lf",dt);
@@ -275,7 +248,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
+		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
 
 
 		fprintf(fout1,"%10.1lf",Prob.Zheu);
@@ -303,7 +276,7 @@ void main(void)
 		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
 		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
 
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
+		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
 
 		fprintf(fout1,"%10.1lf",Prob.Zheu);
 		fprintf(fout1,"%8.2lf",dt);
@@ -314,149 +287,9 @@ void main(void)
 		fprintf(fout1,"%7.2lf\n",gap);
 		fflush(fout1);
 		zheu = Prob.Zheu;
-
-		// Cplex + LagrHeu
-		Prob.cfg.TimeLimit=TLimMIPb;
-		Prob.cfg.Sentinel=0;
-		Prob.cfg.Pred=0;
-		Prob.cfg.Cover=0;
-		Prob.cfg.Lifting=0;
-		Prob.cfg.AddLB=1;
-
-
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
-		Prob.Optimize();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
-
-		fprintf(fout,"%10.1lf",Prob.Zopt);
-		fprintf(fout,"%7.2lf",Prob.Gap);
-		fprintf(fout,"%8d",Prob.Nodes);
-		fprintf(fout,"%8d",Prob.Cuts);
-		fprintf(fout,"%8.2lf",dt);
-		fflush(fout);
-
-		// Sentinel
-		Prob.cfg.TimeLimit=TLimMIPb;
-		Prob.cfg.Sentinel=1;
-		Prob.cfg.Pred=0;
-		Prob.cfg.Cover=0;
-		Prob.cfg.Lifting=0;
-		Prob.cfg.AddLB=0;
-
-
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
-		Prob.Optimize();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
-
-		fprintf(fout,"%10.1lf",Prob.Zopt);
-		fprintf(fout,"%7.2lf",Prob.Gap);
-		fprintf(fout,"%8d",Prob.Nodes);
-		fprintf(fout,"%8d",Prob.Cuts);
-		fprintf(fout,"%8.2lf",dt);
-		fflush(fout);
-
-		// Pred
-		Prob.cfg.TimeLimit=TLimMIPb;
-		Prob.cfg.Sentinel=0;
-		Prob.cfg.Pred=1;
-		Prob.cfg.Cover=0;
-		Prob.cfg.Lifting=0;
-		Prob.cfg.AddLB=0;
-
-
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
-		Prob.Optimize();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
-
-		fprintf(fout,"%10.1lf",Prob.Zopt);
-		fprintf(fout,"%7.2lf",Prob.Gap);
-		fprintf(fout,"%8d",Prob.Nodes);
-		fprintf(fout,"%8d",Prob.Cuts);
-		fprintf(fout,"%8.2lf",dt);
-		fflush(fout);
-
-		// Cover
-		Prob.cfg.TimeLimit=TLimMIPb;
-		Prob.cfg.Sentinel=0;
-		Prob.cfg.Pred=0;
-		Prob.cfg.Cover=1;
-		Prob.cfg.Lifting=1;
-		Prob.cfg.AddLB=0;
-
-
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
-		Prob.Optimize();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
-
-
-		fprintf(fout,"%10.1lf",Prob.Zopt);
-		fprintf(fout,"%7.2lf",Prob.Gap);
-		fprintf(fout,"%8d",Prob.Nodes);
-		fprintf(fout,"%8d",Prob.Cuts);
-		fprintf(fout,"%8.2lf",dt);
-		fflush(fout);
-
-		// Lifted Cover
-		Prob.cfg.TimeLimit=TLimMIPb;
-		Prob.cfg.Sentinel=0;
-		Prob.cfg.Pred=1;
-		Prob.cfg.Cover=1;
-		Prob.cfg.Lifting=1;
-		Prob.cfg.AddLB=0;
-
-
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
-		Prob.Optimize();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) + (K2.QuadPart-K1.QuadPart) ) / 1e4;
-
-		fprintf(fout,"%10.1lf",Prob.Zopt);
-		fprintf(fout,"%7.2lf",Prob.Gap);
-		fprintf(fout,"%8d",Prob.Nodes);
-		fprintf(fout,"%8d",Prob.Cuts);
-		fprintf(fout,"%8.2lf",dt);
-		fflush(fout);
-
-		fprintf(fout,"\n");
-
 	}
 
 	fclose(fpro);
-	fclose(fout);
 	fclose(fout1);
 	fclose(fout2);
 }
