@@ -71,17 +71,17 @@ void main(void)
 
 
 	// Heuristics
-	fprintf(fout1,"\n                              ");
-	fprintf(fout1,"                   Cplex                 ");
-	fprintf(fout1,"          Heuristic      ");
-	fprintf(fout1,"       Lagrangean Heuristic      ");
-	fprintf(fout1,"   Lagrangean Heuristic (coef)   \n");
+	fprintf(fout1,"\n             &    &                 ");
+	fprintf(fout1,"                   Cplex &                 ");
+	fprintf(fout1,"          Heuristic &       ");
+	fprintf(fout1,"       Lagrangean Heuristic &       ");
+	fprintf(fout1,"   Lagrangean Heuristic (coef) \\\\  \n");
 
 	fprintf(fout1,"Istanza                         ");
-	fprintf(fout1,"  Zopt    Gap    Nodes   NCuts    Time   ");
-	fprintf(fout1,"  Zheu     Time   GHeu   ");
-	fprintf(fout1,"  Zheu     Time   Gap    GHeu   ");
-	fprintf(fout1,"  Zheu     Time   Gap    GHeu   \n");
+	fprintf(fout1,"  Zopt &     Gap &     Nodes &   NCuts &    Time   ");
+	fprintf(fout1,"  Zheu &      Time &    GHeu &    ");
+	fprintf(fout1,"  Zheu &      Time &    Gap &    GHeu &    ");
+	fprintf(fout1,"  Zheu &      Time &    Gap &    GHeu \\\\   \n");
 	fflush(fout1);
 
 	// Print instance characteristics
@@ -202,11 +202,11 @@ void main(void)
 		zlp = Prob.Zopt;
 
 
-		fprintf(fout1,"%10.1lf",Prob.Zopt);
-		fprintf(fout1,"%7.2lf",Prob.Gap);
-		fprintf(fout1,"%8d",Prob.Nodes);
-		fprintf(fout1,"%8d",Prob.Cuts);
-		fprintf(fout1,"%8.2lf",dt);
+		fprintf(fout1,"%10.1lf & ",Prob.Zopt);
+		fprintf(fout1,"%7.2lf & ",Prob.Gap);
+		fprintf(fout1,"%8d & ",Prob.Nodes);
+		fprintf(fout1,"%8d & ",Prob.Cuts);
+		fprintf(fout1,"%8.2lf & ",dt);
 		fflush(fout1);
 
 		// Heuristic procedure
@@ -225,11 +225,11 @@ void main(void)
 
 		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
 
-		fprintf(fout1,"%10.1lf",Prob.Zheu);
-		fprintf(fout1,"%8.2lf",dt);
+		fprintf(fout1,"%10.1lf & ",Prob.Zheu);
+		fprintf(fout1,"%8.2lf & ",dt);
 
 		gap = 100.*((zlp-Prob.Zheu)/zlp+0.00001);
-		fprintf(fout1,"%7.2lf",gap);
+		fprintf(fout1,"%7.2lf & ",gap);
 		fflush(fout1);
 		zheu = Prob.Zheu;
 
@@ -251,13 +251,13 @@ void main(void)
 		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
 
 
-		fprintf(fout1,"%10.1lf",Prob.Zheu);
-		fprintf(fout1,"%8.2lf",dt);
+		fprintf(fout1,"%10.1lf & ",Prob.Zheu);
+		fprintf(fout1,"%8.2lf & ",dt);
 		gap = 100.*((Prob.Zlagr-Prob.Zheu)/Prob.Zheu);
-		fprintf(fout1,"%7.2lf",gap);
+		fprintf(fout1,"%7.2lf & ",gap);
 
 		gap = 100.*((zlp-Prob.Zheu)/zlp+0.00001);
-		fprintf(fout1,"%7.2lf",gap);
+		fprintf(fout1,"%7.2lf & ",gap);
 		fflush(fout1);
 		zheu = Prob.Zheu;
 
@@ -278,13 +278,13 @@ void main(void)
 
 		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
 
-		fprintf(fout1,"%10.1lf",Prob.Zheu);
-		fprintf(fout1,"%8.2lf",dt);
+		fprintf(fout1,"%10.1lf & ",Prob.Zheu);
+		fprintf(fout1,"%8.2lf & ",dt);
 		gap = 100.*((Prob.Zlagr-Prob.Zheu)/Prob.Zheu);
-		fprintf(fout1,"%7.2lf",gap);
+		fprintf(fout1,"%7.2lf & ",gap);
 
 		gap = 100.*((zlp-Prob.Zheu)/zlp+0.00001);
-		fprintf(fout1,"%7.2lf\n",gap);
+		fprintf(fout1,"%7.2lf \\\\ \n",gap);
 		fflush(fout1);
 		zheu = Prob.Zheu;
 	}
