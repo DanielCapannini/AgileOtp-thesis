@@ -185,19 +185,10 @@ void main(void)
 		Prob.cfg.Lifting=0;
 		Prob.cfg.AddLB=0;
 
-		FILETIME c1,e1,k1,u1, c2,e2,k2,u2;
-
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
+		t1 = clock();
 		Prob.Optimize();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		ULARGE_INTEGER U1,U2,K1,K2;
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		double dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
+		t2 = clock();
+		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
 		zlp = Prob.Zopt;
 
@@ -214,16 +205,10 @@ void main(void)
 		Prob.cfg.Sentinel=0;
 
 
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
+		t1 = clock();
 		Prob.OptimizeHeu();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
+		t2 = clock();
+		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
 		fprintf(fout1,"%10.1lf & ",Prob.Zheu);
 		fprintf(fout1,"%8.2lf & ",dt);
@@ -233,22 +218,33 @@ void main(void)
 		fflush(fout1);
 		zheu = Prob.Zheu;
 
+
+		Prob.cfg.TimeLimit = TLimHEU;
+		Prob.cfg.Sentinel = 0;
+
+		t1 = clock();
+		Prob.OptimizeHeu_Improved();
+		t2 = clock();
+		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
+
+		fprintf(fout1, "%10.1lf & ", Prob.Zheu);
+		fprintf(fout1, "%8.2lf & ", dt);
+
+		gap = 100. * ((zlp - Prob.Zheu) / zlp + 0.00001);
+		fprintf(fout1, "%7.2lf & ", gap);
+		fflush(fout1);
+		zheu = Prob.Zheu;
+
 		// Lagrangian Heuristic procedure
 		Prob.cfg.TimeLimit=TLimHEU;
 		Prob.cfg.Sentinel=0;
 		Prob.cfg.HeuBest=1.0;
 
 
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
+		t1 = clock();
 		Prob.OptimizeLagrHeu();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
+		t2 = clock();
+		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
 
 		fprintf(fout1,"%10.1lf & ",Prob.Zheu);
@@ -267,16 +263,10 @@ void main(void)
 		Prob.cfg.HeuBest=0.995; // Best=0.995
 
 
-		GetProcessTimes(GetCurrentProcess(), &c1,&e1,&k1,&u1);
+		t1 = clock();
 		Prob.OptimizeLagrHeu();
-		GetProcessTimes(GetCurrentProcess(), &c2,&e2,&k2,&u2);
-
-		U1.LowPart=u1.dwLowDateTime; U1.HighPart=u1.dwHighDateTime;
-		U2.LowPart=u2.dwLowDateTime; U2.HighPart=u2.dwHighDateTime;
-		K1.LowPart=k1.dwLowDateTime; K1.HighPart=k1.dwHighDateTime;
-		K2.LowPart=k2.dwLowDateTime; K2.HighPart=k2.dwHighDateTime;
-
-		dt = ( (U2.QuadPart-U1.QuadPart) ) / 1e4;
+		t2 = clock();
+		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
 		fprintf(fout1,"%10.1lf & ",Prob.Zheu);
 		fprintf(fout1,"%8.2lf & ",dt);
