@@ -1089,6 +1089,301 @@ int AgileOpt::OptimizeHeu(void)
 	return 0;
 }
 
+int AgileOpt::OptimizeHeu_Improved(void)
+{
+	long i, j, k, h, j1, kk;
+	long kount;
+	double obj;
+	double ptot;
+	double objtot;
+	double objval;
+	long nYMap;
+	long* YMap;
+	long* Flag;
+
+	double zheu;
+
+	// Initialize the emerging heuristic solution
+	Zheu = 0.0;
+	objval = 0.0;
+	printf("\n\nSoluzione: \n\n");
+
+	// Auxiliary array to map variables "yij"
+	Flag = new long[n];
+	YMap = new long[n];
+	nYMap = 0;
+	for (j = 0; j < n; j++)
+	{
+		Flag[j] = 0;
+		if ((nY[j] > 1) && (a[j] > Prec))
+		{
+			YMap[j] = nYMap;
+			nYMap++;
+		}
+		else
+			YMap[j] = -1;
+	}
+
+	// Initialize SprintAssign matrix (m x n)
+	int** SprintAssign = new int* [m];
+	for (i = 0; i < m; i++)
+	{
+		SprintAssign[i] = new int[n];
+		for (j = 0; j < n; j++)
+			SprintAssign[i][j] = 0;
+	}
+
+	// LP local into the loop body
+	CplexObj LP;
+
+	// Set problem size
+	LP.ncols = n + nYMap;
+	LP.nrows = 1 + 2 * nYMap;  // OR/AND constraints are added later
+	LP.nz = (n) * (2 + n) + (nYMap) * (1 + n);  // We overestimate |Yj|=n
+	if (cfg.Sentinel)
+	{
+		LP.ncols += 1;
+		LP.nrows += 1;
+		LP.nz += n + 1;
+	}
+	LP.MallocCols();
+
+	for (i = 0; i < m; i++)
+	{
+		// --- COSTRUZIONE DEL MIP ---
+		k = 0;
+		kount = 0;
+		for (j = 0; j < n; j++)
+		{
+			// Funzione obiettivo migliorata
+			double baseValue = u[j] * rcr[j];
+			double earlyFactor = (double)(m - i);
+
+			// Verifica dipendenze pronte
+			int depsReady = 0;
+			double ratio = 0.0;
+			if (nY == 0) {
+				ratio = 1.0;
+			}
+			else {
+				for (int h = 0; h < nY[j]; h++) {
+					int dep = Y[j][h];
+					if (Flag[dep] == 1) {
+						depsReady++;
+					}
+				}
+				ratio = (double)depsReady / nY[j];
+			}
+			double depPenalty = 0.25 + 0.75 * ratio;  // da 0.25 a 1.0
+
+			// Conta quante storie j sblocca
+			int unlocks = 0;
+			for (int k2 = 0; k2 < n; k2++) {
+				for (int h = 0; h < nY[k2]; h++) {
+					if (Y[k2][h] == j)
+						unlocks++;
+				}
+			}
+			double unlockBonus = 0.5 * unlocks;
+
+			LP.obj[k] = earlyFactor * baseValue * depPenalty + unlockBonus;
+
+			LP.matbeg[k] = kount;
+
+			// Knapsack Constraint
+			LP.matind[kount] = 0;
+			LP.matval[kount] = pr[j];
+			kount++;
+
+			// Linking Constraints xj and yj
+			for (h = 0; h < nY[j]; h++)
+			{
+				j1 = Y[j][h];
+				if ((YMap[j1] >= 0) && (j1 != j))
+				{
+					LP.matind[kount] = 1 + YMap[j1];
+					LP.matval[kount] = -1.;
+					kount++;
+				}
+			}
+
+			if (YMap[j] >= 0)
+			{
+				LP.matind[kount] = 1 + nYMap + YMap[j];
+				LP.matval[kount] = -(double)(nY[j] - 1);
+				kount++;
+			}
+
+			// Sentinel Constraint
+			if (cfg.Sentinel)
+			{
+				LP.matind[kount] = 1 + 2 * nYMap;
+				LP.matval[kount] = 1.0;
+				kount++;
+			}
+
+			LP.matcnt[k] = kount - LP.matbeg[k];
+
+			LP.indices[k] = k;
+			LP.priority[k] = 0;
+			LP.direction[k] = CPX_BRANCH_GLOBAL;
+			LP.xctype[k] = 'B';
+
+			LP.lb[k] = 0.0;
+			LP.ub[k] = (Flag[j] == 0) ? 1.0 : 0.0;
+			k++;
+		}
+
+		// Columns/Variables yij
+		kk = 0;
+		for (j = 0; j < n; j++)
+		{
+			if (YMap[kk] < 0)
+			{
+				kk++;
+				continue;
+			}
+
+			if (nY[j] < 2)
+				LP.obj[k] = 0.0;
+			else
+				LP.obj[k] = (m - i) * u[j] * a[j] / (nY[j] - 1);
+
+			LP.matbeg[k] = kount;
+
+			LP.matind[kount] = 1 + YMap[kk];
+			LP.matval[kount] = +1.0;
+			kount++;
+
+			LP.matind[kount] = 1 + nYMap + YMap[kk];
+			LP.matval[kount] = +1.0;
+			kount++;
+
+			LP.matcnt[k] = kount - LP.matbeg[k];
+
+			LP.indices[k] = k;
+			LP.priority[k] = 0;
+			LP.direction[k] = CPX_BRANCH_GLOBAL;
+			LP.xctype[k] = 'C';
+
+			LP.lb[k] = 0.0;
+			LP.ub[k] = (double)n;
+			k++;
+			kk++;
+		}
+
+		// Sentinel columns
+		if (cfg.Sentinel)
+		{
+			kk = 0;
+			LP.obj[k] = 0.0;
+			LP.matbeg[k] = kount;
+			LP.matind[kount] = 1 + 2 * nYMap;
+			LP.matval[kount] = -1.0;
+			kount++;
+			LP.matcnt[k] = kount - LP.matbeg[k];
+			LP.indices[k] = k;
+			LP.priority[k] = 1000;
+			LP.direction[k] = CPX_BRANCH_GLOBAL;
+			LP.xctype[k] = 'I';
+			LP.lb[k] = 0.0;
+			LP.ub[k] = (double)n;
+			k++;
+			kk++;
+		}
+
+		LP.matbeg[k] = kount;
+
+		// Constraints
+		kount = 0;
+		LP.rhs[kount] = pmax[i];
+		LP.sense[kount] = 'L';
+		kount++;
+
+		for (k = 0; k < nYMap; k++)
+		{
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
+			kount++;
+		}
+		for (k = 0; k < nYMap; k++)
+		{
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
+			kount++;
+		}
+		if (cfg.Sentinel)
+		{
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'E';
+			kount++;
+		}
+
+		LP.minmax = -1;
+
+		LP.CopyLP();
+		LP.SetMIP(cfg.TimeLimit);
+
+		// Cutting Plane
+		LP.CuttingPlaneHeu_new(n, m, ur, pr, pmax, nY, Y, nUOR, UOR, nUAND, UAND, Flag, FDepP, cfg.Pred, cfg.Cover, cfg.Lifting, cfg.KnapSol, cfg.MaxCuts, &Cuts, 0);
+
+		LP.SolveMIP(&zheu, &Gap, &Nodes, &Cuts);
+
+		// --- Lettura soluzione ---
+		ptot = 0.0;
+		objtot = 0.0;
+		printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
+
+		// Registrazione assegnazioni
+		for (j = 0; j < n; j++)
+		{
+			if (LP.xt[j] > 0.001)
+			{
+				Flag[j] = 1;
+				SprintAssign[i][j] = 1;
+			}
+			else
+			{
+				SprintAssign[i][j] = 0;
+			}
+		}
+
+		// --- Calcolo Zheu aggiornato ---
+		Zheu = 0.0;
+		for (long si = 0; si <= i; si++)
+			for (long sj = 0; sj < n; sj++)
+				if (SprintAssign[si][sj])
+				{
+					Zheu += (m - si) * u[sj] * rcr[sj];
+					if (nY[sj] > 1) Zheu += a[sj] / (nY[sj] - 1);
+				}
+
+		// Output finale dello sprint
+		ptot = 0.0;
+		objtot = 0.0;
+		for (j = 0; j < n; j++)
+		{
+			if (SprintAssign[i][j])
+			{
+				ptot += p[j] * run[j];
+				objtot += LP.obj[j];
+				printf("%d (%.1lf) ", j, pr[j]);
+			}
+		}
+		printf("\n  ptot=%lf    objtot=%lf\n", ptot, objtot);
+	}
+
+	printf("\n  Zheu=%lf\n", Zheu);
+
+	// Free auxiliary data structures
+	delete[] Flag;
+	delete[] YMap;
+	for (i = 0; i < m; i++) delete[] SprintAssign[i];
+	delete[] SprintAssign;
+
+	return 0;
+}
+
 
 //-----------------------------------------------------------------------------
 //  Optimize heuristically the Agile Schedule by a Lagrangian Heuristc                                   

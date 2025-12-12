@@ -95,6 +95,7 @@ public:
 	// Optimize the Agile Schedule
 	int AgileOpt::Optimize(void);
 	int AgileOpt::OptimizeHeu(void);
+	int AgileOpt::OptimizeHeu_Improved(void);
 	int AgileOpt::OptimizeLagrHeu(void);
 };
 

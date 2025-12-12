@@ -55,6 +55,11 @@ struct cutinfo {
 	int Cover;    // Does it apply cover inequalities?
 	int Lifting;  // Does it apply lifting?
 	int KnapSol;  // How solve the KP?
+	unsigned long last_cut_checksum;   // Per evitare duplicati
+	double last_activity;              // SOLO debug/log
+	double last_rhs;                   // SOLO debug/log
+	int MaxCutsPerNode;                // Limite per nodo
+	int cuts_added_this_node;          // contatore nodo corrente
 	Knapsack KP;
 };
 
@@ -67,6 +72,8 @@ static int CPXPUBLIC myNewcutcallback (CPXCENVptr env, void *cbdata, int wherefr
                 void *cbhandle, int *useraction_p);
 static int CPXPUBLIC myHeucutcallback (CPXCENVptr env, void *cbdata, int wherefrom,
                 void *cbhandle, int *useraction_p);
+static int CPXPUBLIC myHeucutcallback_new(CPXCENVptr env, void* cbdata, int wherefrom,
+	void* cbhandle, int* useraction_p);
 int OR_AND_Inequalities(CUTINFOptr cutinfo);
 int OR_AND_InequalitiesHeu(CUTINFOptr cutinfo);
 int Cover_Inequalities(CUTINFOptr cutinfo);
@@ -157,5 +164,7 @@ public:
 	int CplexObj::CuttingPlaneHeu(long n, long m, double* u, double* p, double* pmax, 
   	                          long *nY, long **Y, long *nUOR, long **UOR, long *nUAND, long **UAND, long *FDepA, long *FDepP,
 	                          int Pred, int Cover, int Lifting, int KnapSol, int MaxCuts, long *Cuts, long fact);
-
+	int CplexObj::CuttingPlaneHeu_new(long n, long m, double* u, double* p, double* pmax,
+		long* nY, long** Y, long* nUOR, long** UOR, long* nUAND, long** UAND, long* FDepA, long* FDepP,
+		int Pred, int Cover, int Lifting, int KnapSol, int MaxCuts, long* Cuts, long fact);
 };

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "../lib/CplexObj.h"
+#include "CplexObj.h"
 //#include "Knapsack.h"
 
 //-----------------------------------------------------------------------------
@@ -701,6 +701,84 @@ TERMINATE:
 }
 
 
+
+int CplexObj::CuttingPlaneHeu_new(
+	long n, long m,
+	double* u, double* p, double* pmax,
+	long* nY, long** Y,
+	long* nUOR, long** UOR,
+	long* nUAND, long** UAND,
+	long* FDepA, long* FDepP,
+	int Pred, int Cover, int Lifting, int KnapSol,
+	int MaxCuts, long* Cuts, long fact)
+{
+	int status = 0;
+	long cur_numcols = CPXgetnumcols(env, lp);
+
+	*Cuts = 0;
+
+	if (fact > 0) {
+		return 0;
+	}
+
+	// Disabilita solo il presolve che modifica la dimensione del modello
+	status = CPXsetintparam(env, CPX_PARAM_PRELINEAR, 0);
+	if (status) return 1;
+
+	status = CPXsetintparam(env, CPX_PARAM_REDUCE, CPX_PREREDUCE_NOPRIMALORDUAL);
+	if (status) return 1;
+
+	// Per sicurezza mantieni le dimensioni degli indici (serve per callback)
+	status = CPXsetintparam(env, CPX_PARAM_MIPCBREDLP, CPX_OFF);
+	if (status) return 1;
+
+	cutinfo.lp = lp;
+	cutinfo.numcols = cur_numcols;
+	cutinfo.Cuts = Cuts;
+	cutinfo.maxcuts = MaxCuts;
+
+	cutinfo.FDepA = FDepA;
+	cutinfo.FDepP = FDepP;
+
+	cutinfo.u = u;
+	cutinfo.p = p;
+	cutinfo.pmax = pmax;
+	cutinfo.nY = nY;
+	cutinfo.Y = Y;
+
+	cutinfo.nUOR = nUOR;
+	cutinfo.UOR = UOR;
+	cutinfo.nUAND = nUAND;
+	cutinfo.UAND = UAND;
+
+	cutinfo.Pred = Pred;
+	cutinfo.Cover = Cover;
+	cutinfo.Lifting = Lifting;
+	cutinfo.KnapSol = KnapSol;
+
+	cutinfo.x = (double*)malloc(cur_numcols * sizeof(double));
+	cutinfo.ind = (int*)malloc(cur_numcols * sizeof(int));
+	cutinfo.val = (double*)malloc(cur_numcols * sizeof(double));
+	cutinfo.beg = (int*)malloc(sizeof(int));
+	cutinfo.rhs = (double*)malloc(sizeof(double));
+	cutinfo.last_cut_checksum = 0UL;
+	cutinfo.last_activity = 0.0;
+	cutinfo.last_rhs = 0.0;
+
+	cutinfo.MaxCutsPerNode = 5;          // valore consigliato
+	cutinfo.cuts_added_this_node = 0;
+
+	if (!cutinfo.x || !cutinfo.ind || !cutinfo.val) {
+		printf("Memory error in cutting plane data.\n");
+		return 1;
+	}
+
+	status = CPXsetusercutcallbackfunc(env, myHeucutcallback_new, &cutinfo);
+	if (status) return 1;
+
+	return 0;
+}
+
 //-----------------------------------------------------------------------------
 // Function implementing a custom cutting plane procedure called by callback
 //-----------------------------------------------------------------------------
@@ -1077,6 +1155,205 @@ TERMINATE:
 
 	return (status);
 
+}
+
+static int CPXPUBLIC myHeucutcallback_new(
+	CPXCENVptr env,
+	void* cbdata,
+	int wherefrom,
+	void* cbhandle,
+	int* useraction_p)
+{
+	int status = 0;
+	*useraction_p = CPX_CALLBACK_DEFAULT;
+
+	CUTINFOptr cutinfo = (CUTINFOptr)cbhandle;
+
+	// Non aggiungere tagli durante LP puro
+	if (cutinfo->FlagLP)
+		return 0;
+
+	// Limita ai primi livelli dell'albero: tagli più efficaci
+	int depth = 0;
+	CPXgetcallbackinfo(env, cbdata, wherefrom, CPX_CALLBACK_INFO_NODE_DEPTH, &depth);
+	if (depth > 3)
+		return 0;
+
+	// Recupera solo le colonne effettivamente usate nei tagli
+	status = CPXgetcallbacknodex(env, cbdata, wherefrom, cutinfo->x, 0, cutinfo->numcols - 1);
+	if (status) return status;
+
+	// Trova più tagli e li aggiunge tutti
+	int numCutsAdded = 0;
+	printf("\n mi sono fermato qui 1");
+
+	while (1) {
+		int violated = OR_AND_InequalitiesHeu(cutinfo);
+		printf("\n mi sono fermato qui 2");
+
+		if (!violated)
+			break;
+
+		status = CPXcutcallbackadd(env, cbdata, wherefrom,
+			cutinfo->nz,
+			cutinfo->rhs[0],
+			'G',
+			cutinfo->ind,
+			cutinfo->val,
+			CPX_USECUT_FILTER); // permette a CPLEX di eliminarli
+
+		if (status) return status;
+		printf("\n mi sono fermato qui 3");
+		numCutsAdded++;
+	}
+	printf("\n mi sono fermato qui 4");
+	if (numCutsAdded > 0)
+		*useraction_p = CPX_CALLBACK_SET;
+
+	return 0;
+}
+
+
+int OR_AND_Inequalities_new(CUTINFOptr cutinfo)
+{
+	const double EPS_VIOL = 1e-6;   // tolleranza per considerare una violazione reale
+	int status = 0;
+
+	int      numcols = cutinfo->numcols;
+	double* x = cutinfo->x;
+	int* ind = cutinfo->ind;
+	double* val = cutinfo->val;
+	double* rhs = cutinfo->rhs;
+	long     n = cutinfo->n;
+	long     m = cutinfo->m;
+
+	long i, j, i1, j1;
+	int k;
+	int k1;
+
+	// piccoli helper
+	auto make_checksum = [&](int* ids, int nn)->unsigned long {
+		unsigned long h = 1469598103934665603UL; // FNV-1a 64bit start
+		for (int t = 0;t < nn;t++) {
+			h ^= (unsigned long)ids[t];
+			h *= 1099511628211UL;
+		}
+		return h;
+		};
+
+	// OR precedence
+	for (j = 0; j < n; j++)
+	{
+		if (cutinfo->nUOR[j] == 0) continue;
+
+		for (i = 0; i < m; i++)
+		{
+			k = (int)(i * n + j);
+			if (x[k] < 1e-9) continue; // non attivo
+
+			// calcola lhs = sum_{i1<=i, u in UOR[j]} x[i1,u]  e rhs = x[i,j]
+			double lhs = 0.0;
+			for (i1 = 0; i1 <= i; i1++)
+				for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
+				{
+					int col = (int)(i1 * n + cutinfo->UOR[j][j1]);
+					lhs += x[col];
+				}
+			double right = x[k];
+
+			double viol = (lhs - right); // l'hai costruito come lhs - rhs >= 0 aspettato
+			if (viol > EPS_VIOL) {
+				// costruisci cut: sum_{i1<=i,u in UOR[j]} x[i1,u] - x[i,j] <= 0
+				k1 = 0;
+				rhs[0] = 0.0;
+				for (i1 = 0; i1 <= i; i1++)
+					for (j1 = 0; j1 < cutinfo->nUOR[j]; j1++)
+					{
+						int col = (int)(i1 * n + cutinfo->UOR[j][j1]);
+						ind[k1] = col;
+						val[k1] = 1.0;
+						k1++;
+					}
+				ind[k1] = k;
+				val[k1] = -1.0;
+				k1++;
+
+				// semplice controllo anti-duplicato rapido: checksum delle colonne
+				unsigned long checksum = make_checksum(ind, k1);
+				if (cutinfo->last_cut_checksum == checksum) {
+					// già aggiunto negli ultimi cut processati: skip
+					return 0;
+				}
+				cutinfo->last_cut_checksum = checksum;
+
+				cutinfo->nz = k1;
+				cutinfo->beg[0] = 0;
+				cutinfo->beg[1] = k1;
+
+				// opzionale: salva anche activity per controllo esterno/debug
+				cutinfo->last_activity = lhs;
+				cutinfo->last_rhs = right;
+
+				return 1;
+			}
+		}
+	}
+
+	// AND precedence
+	for (j = 0; j < n; j++)
+	{
+		if (cutinfo->nUAND[j] == 0) continue;
+
+		for (i = 0; i < m; i++)
+		{
+			k = (int)(i * n + j);
+			if (x[k] < 1e-9) continue;
+
+			// lhs = sum_{i1<=i, u in UAND[j]} x[i1,u]
+			double lhs = 0.0;
+			for (i1 = 0; i1 <= i; i1++)
+				for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
+				{
+					int col = (int)(i1 * n + cutinfo->UAND[j][j1]);
+					lhs += x[col];
+				}
+			double right = (double)cutinfo->nUAND[j] * x[k];
+
+			double viol = (lhs - right); // must be >= 0
+			if (viol > EPS_VIOL) {
+				k1 = 0;
+				rhs[0] = 0.0;
+				for (i1 = 0; i1 <= i; i1++)
+					for (j1 = 0; j1 < cutinfo->nUAND[j]; j1++)
+					{
+						int col = (int)(i1 * n + cutinfo->UAND[j][j1]);
+						ind[k1] = col;
+						val[k1] = 1.0;
+						k1++;
+					}
+				ind[k1] = k;
+				val[k1] = -(double)cutinfo->nUAND[j];
+				k1++;
+
+				unsigned long checksum = make_checksum(ind, k1);
+				if (cutinfo->last_cut_checksum == checksum) {
+					return 0;
+				}
+				cutinfo->last_cut_checksum = checksum;
+
+				cutinfo->nz = k1;
+				cutinfo->beg[0] = 0;
+				cutinfo->beg[1] = k1;
+
+				cutinfo->last_activity = lhs;
+				cutinfo->last_rhs = right;
+
+				return 1;
+			}
+		}
+	}
+
+	return 0;
 }
 
 
