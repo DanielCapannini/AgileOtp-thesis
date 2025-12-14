@@ -74,11 +74,13 @@ void main(void)
 	fprintf(fout1,"\n             &    &                 ");
 	fprintf(fout1,"                   Cplex &                 ");
 	fprintf(fout1,"          Heuristic &       ");
+	fprintf(fout1,"   Improved Heuristic &       ");
 	fprintf(fout1,"       Lagrangean Heuristic &       ");
 	fprintf(fout1,"   Lagrangean Heuristic (coef) \\\\  \n");
 
 	fprintf(fout1,"Istanza                         ");
 	fprintf(fout1,"  Zopt &     Gap &     Nodes &   NCuts &    Time   ");
+	fprintf(fout1,"  Zheu &      Time &    GHeu &    ");
 	fprintf(fout1,"  Zheu &      Time &    GHeu &    ");
 	fprintf(fout1,"  Zheu &      Time &    Gap &    GHeu &    ");
 	fprintf(fout1,"  Zheu &      Time &    Gap &    GHeu \\\\   \n");
@@ -230,8 +232,8 @@ void main(void)
 		fprintf(fout1, "%10.1lf & ", Prob.Zheu);
 		fprintf(fout1, "%8.2lf & ", dt);
 
-		gap = 100. * ((zlp - Prob.Zheu) / zlp + 0.00001);
-		fprintf(fout1, "%7.2lf & ", gap);
+		gap = 100.*((zlp-Prob.Zheu)/zlp+0.00001);
+		fprintf(fout1,"%7.2lf & ",gap);
 		fflush(fout1);
 		zheu = Prob.Zheu;
 
