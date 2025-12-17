@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "../lib/CplexObj.h"
+#include "CplexObj.h"
 //#include "Knapsack.h"
 
 //-----------------------------------------------------------------------------
@@ -757,36 +757,21 @@ int CplexObj::CuttingPlaneHeu_new(
 	cutinfo.KnapSol = KnapSol;
 
 	cutinfo.x = (double*)malloc(cur_numcols * sizeof(double));
-	if (cutinfo.x == NULL) {
-		fprintf(stderr, "No memory for solution values.\n");
-		return 1;
-	}
 	cutinfo.ind = (int*)malloc(cur_numcols * sizeof(int));
-	if (cutinfo.ind == NULL) {
-		fprintf(stderr, "No memory for solution values.\n");
-		return 1;
-	}
 	cutinfo.val = (double*)malloc(cur_numcols * sizeof(double));
-	if (cutinfo.val == NULL) {
-		fprintf(stderr, "No memory for solution values.\n");
-		return 1;
-	}
-	cutinfo.beg = (int*)malloc(2 * sizeof(int));
-	if (cutinfo.beg == NULL) {
-		fprintf(stderr, "No memory for solution values.\n");
-		return 1;
-	}
-	cutinfo.rhs = (double*)malloc(2 * sizeof(double));
-	if (cutinfo.rhs == NULL) {
-		fprintf(stderr, "No memory for solution values.\n");
-		return 1;
-	}
+	cutinfo.beg = (int*)malloc(sizeof(int));
+	cutinfo.rhs = (double*)malloc(sizeof(double));
 	cutinfo.last_cut_checksum = 0UL;
 	cutinfo.last_activity = 0.0;
 	cutinfo.last_rhs = 0.0;
 
 	cutinfo.MaxCutsPerNode = 5;          // valore consigliato
 	cutinfo.cuts_added_this_node = 0;
+
+	if (!cutinfo.x || !cutinfo.ind || !cutinfo.val) {
+		printf("Memory error in cutting plane data.\n");
+		return 1;
+	}
 
 	status = CPXsetusercutcallbackfunc(env, myHeucutcallback_new, &cutinfo);
 	if (status) return 1;
@@ -1188,7 +1173,7 @@ static int CPXPUBLIC myHeucutcallback_new(
 	if (cutinfo->FlagLP)
 		return 0;
 
-	// Limita ai primi livelli dell'albero: tagli più efficaci
+	// Limita ai primi livelli dell'albero: tagli pi� efficaci
 	int depth = 0;
 	CPXgetcallbackinfo(env, cbdata, wherefrom, CPX_CALLBACK_INFO_NODE_DEPTH, &depth);
 	if (depth > 3)
@@ -1198,11 +1183,16 @@ static int CPXPUBLIC myHeucutcallback_new(
 	status = CPXgetcallbacknodex(env, cbdata, wherefrom, cutinfo->x, 0, cutinfo->numcols - 1);
 	if (status) return status;
 
-	// Trova più tagli e li aggiunge tutti
+	// Trova pi� tagli e li aggiunge tutti
 	int numCutsAdded = 0;
+	printf("\n mi sono fermato qui 1");
 
+	int count_iter = 0;
 	while (1) {
+		count_iter++;
+		if (count_iter > 10) break; // sicurezza per evitare loop infiniti
 		int violated = OR_AND_InequalitiesHeu(cutinfo);
+		printf("\n mi sono fermato qui 2");
 
 		if (!violated)
 			break;
@@ -1216,8 +1206,10 @@ static int CPXPUBLIC myHeucutcallback_new(
 			CPX_USECUT_FILTER); // permette a CPLEX di eliminarli
 
 		if (status) return status;
+		printf("\n mi sono fermato qui 3");
 		numCutsAdded++;
 	}
+	printf("\n mi sono fermato qui 4");
 	if (numCutsAdded > 0)
 		*useraction_p = CPX_CALLBACK_SET;
 
@@ -1292,7 +1284,7 @@ int OR_AND_Inequalities_new(CUTINFOptr cutinfo)
 				// semplice controllo anti-duplicato rapido: checksum delle colonne
 				unsigned long checksum = make_checksum(ind, k1);
 				if (cutinfo->last_cut_checksum == checksum) {
-					// già aggiunto negli ultimi cut processati: skip
+					// gi� aggiunto negli ultimi cut processati: skip
 					return 0;
 				}
 				cutinfo->last_cut_checksum = checksum;
