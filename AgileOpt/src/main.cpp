@@ -71,15 +71,18 @@ void main(void)
 
 
 	// Heuristics
-	fprintf(fout1,"\n             &    &                 ");
-	fprintf(fout1,"                   Cplex &                 ");
-	fprintf(fout1,"          Heuristic &       ");
-	fprintf(fout1,"   Improved Heuristic &       ");
-	fprintf(fout1,"       Lagrangean Heuristic &       ");
-	fprintf(fout1,"   Lagrangean Heuristic (coef) \\\\  \n");
+	fprintf(fout1,"\\begin{tabular}{|ll|rrrrr|rrr|rrr|rrrr|rrrr|} \n");
+	fprintf(fout1,"\\hline\n");
+	fprintf(fout1,"\n\\multicolumn{2}{c|}{   } & ");
+	fprintf(fout1,"\n\\multicolumn{5}{c|}{CPLEX} &     ");
+	fprintf(fout1,"\n\\multicolumn{3}{c|}{Heuristic} &    ");
+	fprintf(fout1,"\n\\multicolumn{3}{c|}{Improved Heuristic} &      ");
+	fprintf(fout1,"\n\\multicolumn{4}{c|}{Lagrangian Heuristic} &    ");
+	fprintf(fout1,"\n\\multicolumn{4}{c}{Lagrangian Heuristic (coef)} \\\\  \n");
+	fprintf(fout1,"\\hline\n");
 
-	fprintf(fout1,"Istanza                         ");
-	fprintf(fout1,"  Zopt &     Gap &     Nodes &   NCuts &    Time   ");
+	fprintf(fout1,"Istanza        &     &             ");
+	fprintf(fout1,"  Zopt &     Gap &     Nodes &   NCuts &    Time &   ");
 	fprintf(fout1,"  Zheu &      Time &    GHeu &    ");
 	fprintf(fout1,"  Zheu &      Time &    GHeu &    ");
 	fprintf(fout1,"  Zheu &      Time &    Gap &    GHeu &    ");

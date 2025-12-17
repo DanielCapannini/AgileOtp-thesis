@@ -757,21 +757,36 @@ int CplexObj::CuttingPlaneHeu_new(
 	cutinfo.KnapSol = KnapSol;
 
 	cutinfo.x = (double*)malloc(cur_numcols * sizeof(double));
+	if (cutinfo.x == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
+		return 1;
+	}
 	cutinfo.ind = (int*)malloc(cur_numcols * sizeof(int));
+	if (cutinfo.ind == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
+		return 1;
+	}
 	cutinfo.val = (double*)malloc(cur_numcols * sizeof(double));
-	cutinfo.beg = (int*)malloc(sizeof(int));
-	cutinfo.rhs = (double*)malloc(sizeof(double));
+	if (cutinfo.val == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
+		return 1;
+	}
+	cutinfo.beg = (int*)malloc(2 * sizeof(int));
+	if (cutinfo.beg == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
+		return 1;
+	}
+	cutinfo.rhs = (double*)malloc(2 * sizeof(double));
+	if (cutinfo.rhs == NULL) {
+		fprintf(stderr, "No memory for solution values.\n");
+		return 1;
+	}
 	cutinfo.last_cut_checksum = 0UL;
 	cutinfo.last_activity = 0.0;
 	cutinfo.last_rhs = 0.0;
 
 	cutinfo.MaxCutsPerNode = 5;          // valore consigliato
 	cutinfo.cuts_added_this_node = 0;
-
-	if (!cutinfo.x || !cutinfo.ind || !cutinfo.val) {
-		printf("Memory error in cutting plane data.\n");
-		return 1;
-	}
 
 	status = CPXsetusercutcallbackfunc(env, myHeucutcallback_new, &cutinfo);
 	if (status) return 1;
@@ -1185,11 +1200,9 @@ static int CPXPUBLIC myHeucutcallback_new(
 
 	// Trova più tagli e li aggiunge tutti
 	int numCutsAdded = 0;
-	printf("\n mi sono fermato qui 1");
 
 	while (1) {
 		int violated = OR_AND_InequalitiesHeu(cutinfo);
-		printf("\n mi sono fermato qui 2");
 
 		if (!violated)
 			break;
@@ -1203,10 +1216,8 @@ static int CPXPUBLIC myHeucutcallback_new(
 			CPX_USECUT_FILTER); // permette a CPLEX di eliminarli
 
 		if (status) return status;
-		printf("\n mi sono fermato qui 3");
 		numCutsAdded++;
 	}
-	printf("\n mi sono fermato qui 4");
 	if (numCutsAdded > 0)
 		*useraction_p = CPX_CALLBACK_SET;
 
