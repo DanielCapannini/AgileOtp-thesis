@@ -765,7 +765,7 @@ int CplexObj::CuttingPlaneHeu_new(
 	cutinfo.last_activity = 0.0;
 	cutinfo.last_rhs = 0.0;
 
-	cutinfo.MaxCutsPerNode = 5;          // valore consigliato
+	cutinfo.MaxCutsPerNode = 5;          
 	cutinfo.cuts_added_this_node = 0;
 
 	if (!cutinfo.x || !cutinfo.ind || !cutinfo.val) {
