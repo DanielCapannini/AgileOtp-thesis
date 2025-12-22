@@ -1173,7 +1173,7 @@ static int CPXPUBLIC myHeucutcallback_new(
 	if (cutinfo->FlagLP)
 		return 0;
 
-	// Limita ai primi livelli dell'albero: tagli pi� efficaci
+	// Limita ai primi livelli dell'albero
 	int depth = 0;
 	CPXgetcallbackinfo(env, cbdata, wherefrom, CPX_CALLBACK_INFO_NODE_DEPTH, &depth);
 	if (depth > 3)

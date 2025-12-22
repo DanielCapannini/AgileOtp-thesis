@@ -1174,7 +1174,7 @@ int AgileOpt::OptimizeHeu_Improved(void)
 				}
 				ratio = (double)depsReady / nY[j];
 			}
-			double depPenalty = 0.25 + 0.75 * ratio;  // da 0.25 a 1.0
+			double depPenalty = 0.25 + 0.75 * ratio; 
 
 			// Conta quante storie j sblocca
 			int unlocks = 0;
