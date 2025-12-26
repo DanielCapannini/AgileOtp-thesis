@@ -57,6 +57,7 @@ public:
 
 	long n;       // Number of User Stories
 	long m;       // Number of Sprints
+	long original_m; // Original number of Sprints before any modification
 	double *a;    // a[j] is the affinity of story j
 	double *u;    // u[j] is the utility of story j
 	double *ur;   // u[j]*rcr[j] is the "base" weighted utility of story j

@@ -135,6 +135,8 @@ int AgileOpt::ReadData(const char *name)
 	// Read the number of user stories and of sprints
 	fscanf(fin,"%d %d",&n,&m);
 
+	original_m = m;
+
 	// Read Utility
 	u = new double [n];
 	for (j=0; j<n; j++)
@@ -291,6 +293,8 @@ int AgileOpt::ReadDataWithoutConstraints(const char *name)
 
 	// Read the number of user stories and of sprints
 	fscanf(fin,"%d %d",&n,&m);
+
+	original_m = m;
 
 	// Read Utility
 	u = new double [n];
@@ -535,7 +539,7 @@ int AgileOpt::Optimize(void)
 		for (j=0; j<n; j++)
 		{
 			//k = i*n+j;
-			LP.obj[k] = (m-i)*u[j]*rcr[j];
+			LP.obj[k] = (original_m-i)*u[j]*rcr[j];
 			//LP.obj[k] = (i+1)*u[j]*rcr[j];
 
 			LP.matbeg[k] = kount;
@@ -606,7 +610,7 @@ int AgileOpt::Optimize(void)
 			if (nY[j]<2)
 				LP.obj[k] = 0.0;
 			else
-				LP.obj[k] = (m-i)*u[j]*a[j]/(nY[j]-1);
+				LP.obj[k] = (original_m-i)*u[j]*a[j]/(nY[j]-1);
 
 			//LP.obj[k] = (i+1)*a[j]/nY[j];
 			//LP.obj[k] = 0.0;
@@ -875,7 +879,7 @@ int AgileOpt::OptimizeHeu(void)
 		for (j=0; j<n; j++)
 		{
 			//k = i*n+j;
-			LP.obj[k] = (m-i)*u[j]*rcr[j];  // or ur[j]
+			LP.obj[k] = (original_m-i)*u[j]*rcr[j];  // or ur[j]
 			// LP.obj[k] = u[j]*rcr[j];
 
 			LP.matbeg[k] = kount;
@@ -943,7 +947,7 @@ int AgileOpt::OptimizeHeu(void)
 			if (nY[j]<2)
 				LP.obj[k] = 0.0;
 			else
-				LP.obj[k] = (m-i)*u[j]*a[j]/(nY[j]-1);
+				LP.obj[k] = (original_m-i)*u[j]*a[j]/(nY[j]-1);
 				// LP.obj[k] = a[j]/(nY[j]-1);
 
 			LP.matbeg[k] = kount;
@@ -1247,7 +1251,7 @@ int AgileOpt::OptimizeHeu_Improved(void)
 			if (nY[j] < 2)
 				LP.obj[k] = 0.0;
 			else
-				LP.obj[k] = (m - i) * u[j] * a[j] / (nY[j] - 1);
+				LP.obj[k] = (original_m - i) * u[j] * a[j] / (nY[j] - 1);
 
 			LP.matbeg[k] = kount;
 
@@ -1354,7 +1358,7 @@ int AgileOpt::OptimizeHeu_Improved(void)
 			for (long sj = 0; sj < n; sj++)
 				if (SprintAssign[si][sj])
 				{
-					Zheu += (m - si) * u[sj] * rcr[sj];
+					Zheu += (original_m - si) * u[sj] * rcr[sj];
 					if (nY[sj] > 1) Zheu += a[sj] / (nY[sj] - 1);
 				}
 
