@@ -220,9 +220,9 @@ void main(void)
 		fflush(fout1);
 
 		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
-		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationUncertaintyRisk);
 		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
 		fflush(fout3);
 
@@ -245,9 +245,9 @@ void main(void)
 		zheu = Prob.Zheu;
 
 		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
-		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationUncertaintyRisk);
 		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
 		fflush(fout3);
 
@@ -269,9 +269,9 @@ void main(void)
 		zheu = Prob.Zheu;
 
 		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
-		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationUncertaintyRisk);
 		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
 		fflush(fout3);
 
@@ -298,9 +298,9 @@ void main(void)
 		zheu = Prob.Zheu;
 
 		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
-		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationUncertaintyRisk);
 		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
 		fflush(fout3);
 
@@ -326,9 +326,9 @@ void main(void)
 		zheu = Prob.Zheu;
 
 		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
-		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
-		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.3lf & ", Prob.DeviationUncertaintyRisk);
 		fprintf(fout3, "%10.1lf \\\\ \n ", Prob.HalfUtilitiSprint);
 		fflush(fout3);
 	}

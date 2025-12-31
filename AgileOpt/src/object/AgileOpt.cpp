@@ -1070,6 +1070,16 @@ int AgileOpt::OptimizeHeu(void)
 			YMap[j]=-1;
 	}
 
+
+	// Initialize SprintAssign matrix (m x n)
+	int** SprintAssign = new int* [m];
+	for (i = 0; i < m; i++)
+	{
+		SprintAssign[i] = new int[n];
+		for (j = 0; j < n; j++)
+			SprintAssign[i][j] = 0;
+	}
+
 	CplexObj LP;
 
 	for (i=0; i<m; i++)
@@ -1277,6 +1287,7 @@ int AgileOpt::OptimizeHeu(void)
 				objtot += LP.obj[j];
 				//printf("%d ",j);
 				printf("%d (%.1lf) ",j,pr[j]);
+				SprintAssign[i][j] = 1;
 			}
 		}
 
@@ -1329,7 +1340,7 @@ int AgileOpt::OptimizeHeu(void)
 		// Variables xij
 		for (j=0; j<n; j++)
 		{
-			if (LP.xt[k]>0.001)
+			if (SprintAssign[i][j])
 			{
 				sprint_utilization += pr[j];
 				printf("%d (%.1lf) ",j,pr[j]);
@@ -1724,7 +1735,7 @@ int AgileOpt::OptimizeHeu_Improved(void)
 		// Variables xij
 		for (j=0; j<n; j++)
 		{
-			if (LP.xt[k]>0.001)
+			if (SprintAssign[i][j])
 			{
 				sprint_utilization += pr[j];
 				printf("%d (%.1lf) ",j,pr[j]);
