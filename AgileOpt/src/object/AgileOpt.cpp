@@ -57,6 +57,11 @@ AgileOpt::AgileOpt(void)
 	Gap = 0.0;
 	Nodes = 0;
 	Cuts = 0;
+	NSprintsUsed = 0;
+	PercentageUtilization = 0;
+	DeviationRisk = 0.0;
+	DeviationUncertaintyRisk = 0.0;
+	HalfUtilitiSprint = -1;
 }
 
 long CountOccupiedSprints(const CplexObj& LP, long n, long m)
@@ -891,12 +896,11 @@ int AgileOpt::Optimize(void)
 	k=0;
 	kk=n*m;
 
-	long NSprintsUsed = 0;
-	double PercentageUtilization = 0;
-	double DeviationRisk = 0.0;
-	double DeviationUncertaintyRisk = 0.0;
-	long HalfUtilitiSprint = -1;
-
+	NSprintsUsed = 0;
+	PercentageUtilization = 0;
+	DeviationRisk = 0.0;
+	DeviationUncertaintyRisk = 0.0;
+	HalfUtilitiSprint = -1;
 	double *sprint_risks = new double[m];
 	double *sprint_uncertainties = new double[m];
 	for (i = 0; i < m; i++) {
@@ -1296,12 +1300,11 @@ int AgileOpt::OptimizeHeu(void)
 	}
 
 	
-	long NSprintsUsed =0;
-	double PercentageUtilization = 0;
-	double DeviationRisk = 0.0;
-	double DeviationUncertaintyRisk = 0.0;
-	long HalfUtilitiSprint = -1;
-
+	NSprintsUsed =0;
+	PercentageUtilization = 0;
+	DeviationRisk = 0.0;
+	DeviationUncertaintyRisk = 0.0;
+	HalfUtilitiSprint = -1;
 	double *sprint_risks = new double[m];
 	double *sprint_uncertainties = new double[m];
 	for (i = 0; i < m; i++) {
@@ -1692,12 +1695,11 @@ int AgileOpt::OptimizeHeu_Improved(void)
 	}
 
 
-	long NSprintsUsed =0;
-	double PercentageUtilization = 0;
-	double DeviationRisk = 0.0;
-	double DeviationUncertaintyRisk = 0.0;
-	long HalfUtilitiSprint = -1;
-
+	NSprintsUsed =0;
+	PercentageUtilization = 0;
+	DeviationRisk = 0.0;
+	DeviationUncertaintyRisk = 0.0;
+	HalfUtilitiSprint = -1;
 	double *sprint_risks = new double[m];
 	double *sprint_uncertainties = new double[m];
 	for (i = 0; i < m; i++) {
@@ -1733,6 +1735,9 @@ int AgileOpt::OptimizeHeu_Improved(void)
 			}
 			k++;
 		}
+		printf("\n");
+		printf("Sprint Utilization: %lf\n", sprint_utilization);
+		printf("\n");
 		avg_sprint_risk /= (double)(nn>0?nn:1);
 		avg_sprint_uncertainty /= (double)(nn>0?nn:1);
 		sprint_risks[i] = avg_sprint_risk;
