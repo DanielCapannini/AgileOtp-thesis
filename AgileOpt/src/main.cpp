@@ -34,6 +34,7 @@ void main(void)
 	FILE *fpro;
 	FILE *fout1;
 	FILE *fout2;
+	FILE *fout3;
 	AgileOpt Prob;
 	
 	long npro;
@@ -61,11 +62,13 @@ void main(void)
 		printf("Running AgileOpt without dependency constraints\n");
 		fout1 = fopen("..\\Agile-Heu.out","w");
 		fout2 = fopen(("..\\Agile " + copy_of_filename + "-Pro.out").c_str(),"w");
+		fout3 = fopen(("..\\Agile " + copy_of_filename + "-KPI.out").c_str(),"w");
 	}
 	else {
 		printf("Running AgileOpt with dependency constraints\n");
 		fout1 = fopen("..\\AgileWithoutDep-Heu.out","w");
 		fout2 = fopen(("..\\AgileWithoutDep " + copy_of_filename + "-Pro.out").c_str(),"w");
+		fout3 = fopen(("..\\AgileWithoutDep " + copy_of_filename + "-KPI.out").c_str(),"w");
 	}
 	printf("\nsono arrivato -1\n");
 
@@ -93,7 +96,18 @@ void main(void)
 	fprintf(fout2,"Istanza                         ");
 	fprintf(fout2," &    &   n &      m &     min(pmax) &     max(pmax) &     avg(pmax) &     nY &    |U^OR| &  |U^AND| \\\\  \n");
 	fflush(fout2);
-	 
+
+	fprintf(fout3, "\\begin{tabular}{|ll|rrrrr|rrrrr|rrrrr|rrrrr|rrrrr|} \n");
+	fprintf(fout3,"\\hline\n");
+	fprintf(fout3,"\n\\multicolumn{5}{c|}{   } & ");
+	fprintf(fout3,"\n\\multicolumn{5}{c|}{CPLEX} &     ");
+	fprintf(fout3,"\n\\multicolumn{5}{c|}{Heuristic} &    ");
+	fprintf(fout3,"\n\\multicolumn{5}{c|}{Improved Heuristic} &      ");
+	fprintf(fout3,"\n\\multicolumn{5}{c|}{Lagrangian Heuristic} &    ");
+	fprintf(fout3,"\n\\multicolumn{5}{c}{Lagrangian Heuristic (coef)} \\\\  \n");
+	fprintf(fout3,"Istanza  &   &  N.S.O.  &  Avg.S.U.  &  Dev.Risk  &  Dev.Unc.Risk  &  Half.U.S.  &  N.S.O.  &  Avg.S.U.  &  Dev.Risk  &  Dev.Unc.Risk  &  Half.U.S.  &  N.S.O.  &  Avg.S.U.  &  Dev.Risk  &  Dev.Unc.Risk  &  Half.U.S.  &  N.S.O.  &  Avg.S.U.  &  Dev.Risk  &  Dev.Unc.Risk  &  Half.U.S.  &  N.S.O.  &  Avg.S.U.  &  Dev.Risk  &  Dev.Unc.Risk  &  Half.U.S. \\\\ \n");         
+	fflush(fout3); 
+
 	fscanf(fpro,"%d",&npro);
 	printf("\nsono arrivato 0\n");
 
@@ -205,6 +219,13 @@ void main(void)
 		fprintf(fout1,"%8.2lf & ",dt);
 		fflush(fout1);
 
+		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
+		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
+		fflush(fout3);
+
 		// Heuristic procedure
 		Prob.cfg.TimeLimit=TLimHEU;
 		Prob.cfg.Sentinel=0;
@@ -223,6 +244,13 @@ void main(void)
 		fflush(fout1);
 		zheu = Prob.Zheu;
 
+		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
+		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
+		fflush(fout3);
+
 
 		Prob.cfg.TimeLimit = TLimHEU;
 		Prob.cfg.Sentinel = 0;
@@ -239,6 +267,13 @@ void main(void)
 		fprintf(fout1,"%7.2lf & ",gap);
 		fflush(fout1);
 		zheu = Prob.Zheu;
+
+		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
+		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
+		fflush(fout3);
 
 		// Lagrangian Heuristic procedure
 		Prob.cfg.TimeLimit=TLimHEU;
@@ -262,6 +297,13 @@ void main(void)
 		fflush(fout1);
 		zheu = Prob.Zheu;
 
+		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
+		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.1lf & ", Prob.HalfUtilitiSprint);
+		fflush(fout3);
+
 		// Lagrangian Heuristic procedure with improvement even with HeuBest*Zub solution
 		Prob.cfg.TimeLimit=TLimHEU;
 		Prob.cfg.Sentinel=0;
@@ -282,11 +324,19 @@ void main(void)
 		fprintf(fout1,"%7.2lf \\\\ \n",gap);
 		fflush(fout1);
 		zheu = Prob.Zheu;
+
+		fprintf(fout3, "%10.1lf & ", Prob.NSprintsUsed);
+		fprintf(fout3, "%10.2lf & ", Prob.PercentageUtilization);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationRisk);
+		fprintf(fout3, "%10.2lf & ", Prob.DeviationUncertaintyRisk);
+		fprintf(fout3, "%10.1lf \\\\ \n ", Prob.HalfUtilitiSprint);
+		fflush(fout3);
 	}
 
 	fclose(fpro);
 	fclose(fout1);
 	fclose(fout2);
+	fclose(fout3);
 }
 
 long MangiaPath(char *fname)
