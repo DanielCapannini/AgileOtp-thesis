@@ -59,6 +59,126 @@ AgileOpt::AgileOpt(void)
 	Cuts = 0;
 }
 
+long CountOccupiedSprints(const CplexObj& LP, long n, long m)
+{
+    long i, j;
+    long count = 0;
+
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            if (LP.xt[i*n + j] > 0.5) {
+                count++;
+                break;
+            }
+        }
+    }
+    return count;
+}
+
+double AverageSprintUtilization(const CplexObj& LP, long n, long m, const double* p, const double* run, const double* pmax)
+{
+    long i, j;
+    long occupied = 0;
+    double avg = 0.0;
+
+    for (i = 0; i < m; i++) {
+        double used_points = 0.0;
+        bool used = false;
+
+        for (j = 0; j < n; j++) {
+            if (LP.xt[i*n + j] > 0.5) {
+                used = true;
+                used_points += p[j] * run[j];
+            }
+        }
+
+        if (used) {
+            occupied++;
+            avg += used_points / pmax[i];
+        }
+    }
+
+    return (occupied > 0) ? avg / occupied : 0.0;
+}
+
+double SprintRiskStdDev(const CplexObj& LP, long n, long m, const double* rcr)
+{
+    long i, j;
+
+    double *R = new double[m];
+    for (i = 0; i < m; i++)
+        R[i] = 0.0;
+
+    for (i = 0; i < m; i++)
+        for (j = 0; j < n; j++)
+            if (LP.xt[i*n + j] > 0.5)
+                R[i] += rcr[j];
+
+    double mean = 0.0;
+    for (i = 0; i < m; i++)
+        mean += R[i];
+    mean /= m;
+
+    double var = 0.0;
+    for (i = 0; i < m; i++)
+        var += (R[i] - mean) * (R[i] - mean);
+
+    delete [] R;
+
+    return sqrt(var / m);
+}
+
+double SprintUncertaintyStdDev(const CplexObj& LP, long n, long m, const double* run)
+{
+    long i, j;
+
+    double *U = new double[m];
+    for (i = 0; i < m; i++)
+        U[i] = 0.0;
+
+    for (i = 0; i < m; i++)
+        for (j = 0; j < n; j++)
+            if (LP.xt[i*n + j] > 0.5)
+                U[i] += run[j];
+
+    double mean = 0.0;
+    for (i = 0; i < m; i++)
+        mean += U[i];
+    mean /= m;
+
+    double var = 0.0;
+    for (i = 0; i < m; i++)
+        var += (U[i] - mean) * (U[i] - mean);
+
+    delete [] U;
+
+    return sqrt(var / m);
+}
+
+long SprintHalfUtility(const CplexObj& LP, long n, long m, const double* u) 
+{
+    long i, j;
+
+    double U_tot = 0.0;
+    for (j = 0; j < n; j++)
+        U_tot += u[j];
+
+    double U_cum = 0.0;
+
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            if (LP.xt[i*n + j] > 0.5)
+                U_cum += u[j];
+        }
+
+        if (U_cum >= U_tot / 2.0)
+            return i;
+    }
+
+    return -1;  // mai raggiunta
+}
+
+
 //-----------------------------------------------------------------------------
 //  Destructor                                    
 //-----------------------------------------------------------------------------
@@ -770,11 +890,36 @@ int AgileOpt::Optimize(void)
 	objval=0.0;
 	k=0;
 	kk=n*m;
+
+	long NSprintsUsed = 0;
+	double PercentageUtilization = 0;
+	double DeviationRisk = 0.0;
+	double DeviationUncertaintyRisk = 0.0;
+	long HalfUtilitiSprint = -1;
+
+	double *sprint_risks = new double[m];
+	double *sprint_uncertainties = new double[m];
+	for (i = 0; i < m; i++) {
+		sprint_risks[i] = 0.0;
+		sprint_uncertainties[i] = 0.0;
+	}
+
+	double halftotal_utility = 0.0;
+	for (j=0; j<n; j++)
+		halftotal_utility += u[j];
+	halftotal_utility /= 2.0;
+
+	int count = 0;
 	for (i=0; i<m; i++)
 	{
 		ptot=0.0;
 		objtot=0.0;
 		printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
+		double sprint_utilization = 0.0;
+
+		double avg_sprint_risk = 0.0;
+		double avg_sprint_uncertainty = 0.0;
+		int nn = 0;
 
 		// Variables xij
 		for (j=0; j<n; j++)
@@ -785,9 +930,28 @@ int AgileOpt::Optimize(void)
 				objtot += LP.obj[k];
 				//printf("%d ",j);
 				printf("%d (%.1lf) ",j,pr[j]);
+				sprint_utilization += pr[j];
+				printf("%d (%.1lf) ",j,pr[j]);
+				avg_sprint_risk += rcr[j];
+				avg_sprint_uncertainty += run[j];
+				halftotal_utility -= u[j];
+				nn++;
 			}
 			k++;
 		}
+		avg_sprint_risk /= (double)(nn>0?nn:1);
+		avg_sprint_uncertainty /= (double)(nn>0?nn:1);
+		sprint_risks[i] = avg_sprint_risk;
+		sprint_uncertainties[i] = avg_sprint_uncertainty;
+		if(sprint_utilization > 0.0){
+			PercentageUtilization += sprint_utilization / pmax[i];
+			count++;
+			NSprintsUsed++;
+		}
+		if(halftotal_utility <= 0.0 && HalfUtilitiSprint < 0){
+			HalfUtilitiSprint = NSprintsUsed;
+		}
+
 		// Variables yij
 		for (j=0; j<n; j++)
 		{
@@ -806,6 +970,52 @@ int AgileOpt::Optimize(void)
 		printf("\n  ptot=%lf     objtot=%lf\n",ptot,objtot);
 
 	}
+
+	double mean_risk = 0.0;
+	double mean_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		mean_risk += sprint_risks[i];
+		mean_uncertainty += sprint_uncertainties[i];
+	}
+
+	if (NSprintsUsed > 0) {
+		mean_risk /= NSprintsUsed;
+		mean_uncertainty /= NSprintsUsed;
+	}
+
+	double var_risk = 0.0;
+	double var_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		double dr = sprint_risks[i] - mean_risk;
+		double du = sprint_uncertainties[i] - mean_uncertainty;
+
+		var_risk += dr * dr;
+		var_uncertainty += du * du;
+	}
+
+	if (NSprintsUsed > 0) {
+		DeviationRisk = sqrt(var_risk / NSprintsUsed);
+		DeviationUncertaintyRisk = sqrt(var_uncertainty / NSprintsUsed);
+	} else {
+		DeviationRisk = 0.0;
+		DeviationUncertaintyRisk = 0.0;
+	}
+
+	delete [] sprint_risks;
+	delete [] sprint_uncertainties;
+
+	PercentageUtilization /= (double)count;
+
+	printf("\n Number of Occupied Sprints: %ld", NSprintsUsed);
+	printf("\n Average Sprint Utilization: %lf", PercentageUtilization);
+	printf("\n Sprint Risk Standard Deviation: %lf", DeviationRisk);
+	printf("\n Sprint Uncertainty Standard Deviation: %lf", DeviationUncertaintyRisk);
+	if (HalfUtilitiSprint >= 0)
+		printf("\n Sprint where Half of Total Utility is achieved: %ld", HalfUtilitiSprint);
+	else
+		printf("\n Half of Total Utility is not achieved in any sprint.");
 
 	printf("\n Zopt=%lf\n",objval);
 
@@ -856,10 +1066,11 @@ int AgileOpt::OptimizeHeu(void)
 			YMap[j]=-1;
 	}
 
+	CplexObj LP;
+
 	for (i=0; i<m; i++)
 	{
 		// LP local into the loop body
-		CplexObj LP;
 
 		// Set problem size
 		LP.ncols = n+nYMap;
@@ -1083,6 +1294,109 @@ int AgileOpt::OptimizeHeu(void)
 		printf("\n  ptot=%lf    objtot=%lf\n",ptot,objtot);
 
 	}
+
+	
+	long NSprintsUsed =0;
+	double PercentageUtilization = 0;
+	double DeviationRisk = 0.0;
+	double DeviationUncertaintyRisk = 0.0;
+	long HalfUtilitiSprint = -1;
+
+	double *sprint_risks = new double[m];
+	double *sprint_uncertainties = new double[m];
+	for (i = 0; i < m; i++) {
+		sprint_risks[i] = 0.0;
+		sprint_uncertainties[i] = 0.0;
+	}
+
+	double halftotal_utility = 0.0;
+	for (j=0; j<n; j++)
+		halftotal_utility += u[j];
+	halftotal_utility /= 2.0;
+
+	int count = 0;
+	for (i=0; i<m; i++)
+	{
+		double sprint_utilization = 0.0;
+
+		double avg_sprint_risk = 0.0;
+		double avg_sprint_uncertainty = 0.0;
+		int nn = 0;
+
+		// Variables xij
+		for (j=0; j<n; j++)
+		{
+			if (LP.xt[k]>0.001)
+			{
+				sprint_utilization += pr[j];
+				printf("%d (%.1lf) ",j,pr[j]);
+				avg_sprint_risk += rcr[j];
+				avg_sprint_uncertainty += run[j];
+				halftotal_utility -= u[j];
+				nn++;
+			}
+			k++;
+		}
+		avg_sprint_risk /= (double)(nn>0?nn:1);
+		avg_sprint_uncertainty /= (double)(nn>0?nn:1);
+		sprint_risks[i] = avg_sprint_risk;
+		sprint_uncertainties[i] = avg_sprint_uncertainty;
+		if(sprint_utilization > 0.0){
+			PercentageUtilization += sprint_utilization / pmax[i];
+			count++;
+			NSprintsUsed++;
+		}
+		if(halftotal_utility <= 0.0 && HalfUtilitiSprint < 0){
+			HalfUtilitiSprint = NSprintsUsed;
+		}
+
+	}
+
+	double mean_risk = 0.0;
+	double mean_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		mean_risk += sprint_risks[i];
+		mean_uncertainty += sprint_uncertainties[i];
+	}
+
+	if (NSprintsUsed > 0) {
+		mean_risk /= NSprintsUsed;
+		mean_uncertainty /= NSprintsUsed;
+	}
+
+	double var_risk = 0.0;
+	double var_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		double dr = sprint_risks[i] - mean_risk;
+		double du = sprint_uncertainties[i] - mean_uncertainty;
+
+		var_risk += dr * dr;
+		var_uncertainty += du * du;
+	}
+
+	if (NSprintsUsed > 0) {
+		DeviationRisk = sqrt(var_risk / NSprintsUsed);
+		DeviationUncertaintyRisk = sqrt(var_uncertainty / NSprintsUsed);
+	} else {
+		DeviationRisk = 0.0;
+		DeviationUncertaintyRisk = 0.0;
+	}
+
+	delete [] sprint_risks;
+	delete [] sprint_uncertainties;
+
+	PercentageUtilization /= (double)count;
+
+	printf("\n Number of Occupied Sprints: %ld", NSprintsUsed);
+	printf("\n Average Sprint Utilization: %lf", PercentageUtilization);
+	printf("\n Sprint Risk Standard Deviation: %lf", DeviationRisk);
+	printf("\n Sprint Uncertainty Standard Deviation: %lf", DeviationUncertaintyRisk);
+	if (HalfUtilitiSprint >= 0)
+		printf("\n Sprint where Half of Total Utility is achieved: %ld", HalfUtilitiSprint);
+	else
+		printf("\n Half of Total Utility is not achieved in any sprint.");
 
 	printf("\n  Zheu=%lf\n",Zheu);
 
@@ -1376,6 +1690,109 @@ int AgileOpt::OptimizeHeu_Improved(void)
 		}
 		printf("\n  ptot=%lf    objtot=%lf\n", ptot, objtot);
 	}
+
+
+	long NSprintsUsed =0;
+	double PercentageUtilization = 0;
+	double DeviationRisk = 0.0;
+	double DeviationUncertaintyRisk = 0.0;
+	long HalfUtilitiSprint = -1;
+
+	double *sprint_risks = new double[m];
+	double *sprint_uncertainties = new double[m];
+	for (i = 0; i < m; i++) {
+		sprint_risks[i] = 0.0;
+		sprint_uncertainties[i] = 0.0;
+	}
+
+	double halftotal_utility = 0.0;
+	for (j=0; j<n; j++)
+		halftotal_utility += u[j];
+	halftotal_utility /= 2.0;
+
+	int count = 0;
+	for (i=0; i<m; i++)
+	{
+		double sprint_utilization = 0.0;
+
+		double avg_sprint_risk = 0.0;
+		double avg_sprint_uncertainty = 0.0;
+		int nn = 0;
+
+		// Variables xij
+		for (j=0; j<n; j++)
+		{
+			if (LP.xt[k]>0.001)
+			{
+				sprint_utilization += pr[j];
+				printf("%d (%.1lf) ",j,pr[j]);
+				avg_sprint_risk += rcr[j];
+				avg_sprint_uncertainty += run[j];
+				halftotal_utility -= u[j];
+				nn++;
+			}
+			k++;
+		}
+		avg_sprint_risk /= (double)(nn>0?nn:1);
+		avg_sprint_uncertainty /= (double)(nn>0?nn:1);
+		sprint_risks[i] = avg_sprint_risk;
+		sprint_uncertainties[i] = avg_sprint_uncertainty;
+		if(sprint_utilization > 0.0){
+			PercentageUtilization += sprint_utilization / pmax[i];
+			count++;
+			NSprintsUsed++;
+		}
+		if(halftotal_utility <= 0.0 && HalfUtilitiSprint < 0){
+			HalfUtilitiSprint = NSprintsUsed;
+		}
+
+	}
+
+	double mean_risk = 0.0;
+	double mean_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		mean_risk += sprint_risks[i];
+		mean_uncertainty += sprint_uncertainties[i];
+	}
+
+	if (NSprintsUsed > 0) {
+		mean_risk /= NSprintsUsed;
+		mean_uncertainty /= NSprintsUsed;
+	}
+
+	double var_risk = 0.0;
+	double var_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		double dr = sprint_risks[i] - mean_risk;
+		double du = sprint_uncertainties[i] - mean_uncertainty;
+
+		var_risk += dr * dr;
+		var_uncertainty += du * du;
+	}
+
+	if (NSprintsUsed > 0) {
+		DeviationRisk = sqrt(var_risk / NSprintsUsed);
+		DeviationUncertaintyRisk = sqrt(var_uncertainty / NSprintsUsed);
+	} else {
+		DeviationRisk = 0.0;
+		DeviationUncertaintyRisk = 0.0;
+	}
+
+	delete [] sprint_risks;
+	delete [] sprint_uncertainties;
+
+	PercentageUtilization /= (double)count;
+
+	printf("\n Number of Occupied Sprints: %ld", NSprintsUsed);
+	printf("\n Average Sprint Utilization: %lf", PercentageUtilization);
+	printf("\n Sprint Risk Standard Deviation: %lf", DeviationRisk);
+	printf("\n Sprint Uncertainty Standard Deviation: %lf", DeviationUncertaintyRisk);
+	if (HalfUtilitiSprint >= 0)
+		printf("\n Sprint where Half of Total Utility is achieved: %ld", HalfUtilitiSprint);
+	else
+		printf("\n Half of Total Utility is not achieved in any sprint.");
 
 	printf("\n  Zheu=%lf\n", Zheu);
 

@@ -84,6 +84,11 @@ public:
 	double Gap;
 	long Nodes;
 	long Cuts;
+	double NSprintsUsed;
+	double PercentageUtilization;
+	double DeviationRisk;
+	double DeviationUncertaintyRisk;
+	double HalfUtilitiSprint;
 
 	// Constructor and Destructorr
 	AgileOpt(void);
