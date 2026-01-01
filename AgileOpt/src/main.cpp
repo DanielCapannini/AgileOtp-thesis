@@ -27,6 +27,8 @@ const bool GROUP_SECOND_GOAL_SPRINTS = false; // FLAG TO USE TO GROUP THE SPRITT
 int number_of_sprints_to_reduce = 0; // number of sprints to modify for testing
 float percentage_of_reduced_story_points_per_modified_sprint = 0.2f; // each modified sprint will have its capacity reduced by 2 story points
 
+const int select_method = 1; // 1 to 6
+
 long MangiaPath(char *fname);
 
 void main(void)
@@ -205,7 +207,7 @@ void main(void)
 		Prob.cfg.AddLB=0;
 
 		t1 = clock();
-		Prob.Optimize();
+		Prob.Optimize(select_method);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -232,7 +234,7 @@ void main(void)
 
 
 		t1 = clock();
-		Prob.OptimizeHeu();
+		Prob.OptimizeHeu(select_method);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -256,7 +258,7 @@ void main(void)
 		Prob.cfg.Sentinel = 0;
 
 		t1 = clock();
-		Prob.OptimizeHeu_Improved();
+		Prob.OptimizeHeu_Improved(select_method);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -282,7 +284,7 @@ void main(void)
 
 
 		t1 = clock();
-		Prob.OptimizeLagrHeu();
+		Prob.OptimizeLagrHeu(select_method);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -311,7 +313,7 @@ void main(void)
 
 
 		t1 = clock();
-		Prob.OptimizeLagrHeu();
+		Prob.OptimizeLagrHeu(select_method);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
