@@ -600,7 +600,7 @@ loop1:
 //  Optimize the Agile Schedule                                    
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::Optimize(void)
+int AgileOpt::Optimize(int select_method)
 {
 	long i,j,k,h,j1,kk;
 	long kount;
@@ -616,7 +616,7 @@ int AgileOpt::Optimize(void)
 
 	// If required compute a heuristic solution
 	if (cfg.AddLB)
-		OptimizeHeu();
+		OptimizeHeu(select_method);
 
 	// We allocate Cplex here
 	CplexObj LP;
@@ -657,15 +657,72 @@ int AgileOpt::Optimize(void)
 	LP.nsosnz = n*m;
 	LP.MallocCols();
 
+	long *Flag;
+
 	// Load Columns/Variables xij in the Cplex data structure
 	k = 0;
 	kount = 0;
 	for (i=0; i<m; i++)
 		for (j=0; j<n; j++)
 		{
+
+			Flag = new long[n];
+			YMap = new long[n];
+			nYMap = 0;
+			for (j = 0; j < n; j++)
+			{
+				Flag[j] = 0;
+			}
+
+			int depsReady = 0;
+			double ratio = 0.0;
+			if (nY == 0) {
+				ratio = 1.0;
+			}
+			else {
+				for (int h = 0; h < nY[j]; h++) {
+					int dep = Y[j][h];
+					if (Flag[dep] == 1) {
+						depsReady++;
+					}
+				}
+				ratio = (double)depsReady / nY[j];
+			}
+			double depPenalty = 0.25 + 0.75 * ratio; 
+
+			// Conta quante storie j sblocca
+			int unlocks = 0;
+			for (int k2 = 0; k2 < n; k2++) {
+				for (int h = 0; h < nY[k2]; h++) {
+					if (Y[k2][h] == j)
+						unlocks++;
+				}
+			}
+			double unlockBonus = 0.5 * unlocks;
 			//k = i*n+j;
-			LP.obj[k] = (original_m-i)*u[j]*rcr[j];
-			//LP.obj[k] = (i+1)*u[j]*rcr[j];
+			switch (select_method)
+			{
+				case 1:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+					break;
+				case 2:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j]  * depPenalty + unlockBonus;
+					break;
+				case 3:
+					LP.obj[k] = (original_m - i) * u[j] * run[j];
+					break;
+				case 4:
+					LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
+					break;
+				case 5:
+					LP.obj[k] = (original_m - i) * p[j];
+					break;
+				case 6:
+					LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
+					break;
+				default:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+			}
 
 			LP.matbeg[k] = kount;
 
@@ -1034,7 +1091,7 @@ int AgileOpt::Optimize(void)
 //  Optimize heuristically the Agile Schedule                                    
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::OptimizeHeu(void)
+int AgileOpt::OptimizeHeu(int select_method)
 {
 	long i,j,k,h,j1,kk;
 	long kount;
@@ -1104,8 +1161,55 @@ int AgileOpt::OptimizeHeu(void)
 		for (j=0; j<n; j++)
 		{
 			//k = i*n+j;
-			LP.obj[k] = (original_m-i)*u[j]*rcr[j];  // or ur[j]
-			// LP.obj[k] = u[j]*rcr[j];
+			int depsReady = 0;
+			double ratio = 0.0;
+			if (nY == 0) {
+				ratio = 1.0;
+			}
+			else {
+				for (int h = 0; h < nY[j]; h++) {
+					int dep = Y[j][h];
+					if (Flag[dep] == 1) {
+						depsReady++;
+					}
+				}
+				ratio = (double)depsReady / nY[j];
+			}
+			double depPenalty = 0.25 + 0.75 * ratio; 
+
+			// Conta quante storie j sblocca
+			int unlocks = 0;
+			for (int k2 = 0; k2 < n; k2++) {
+				for (int h = 0; h < nY[k2]; h++) {
+					if (Y[k2][h] == j)
+						unlocks++;
+				}
+			}
+			double unlockBonus = 0.5 * unlocks;
+			//k = i*n+j;
+			switch (select_method)
+			{
+				case 1:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+					break;
+				case 2:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j]  * depPenalty + unlockBonus;
+					break;
+				case 3:
+					LP.obj[k] = (original_m - i) * u[j] * run[j];
+					break;
+				case 4:
+					LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
+					break;
+				case 5:
+					LP.obj[k] = (original_m - i) * p[j];
+					break;
+				case 6:
+					LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
+					break;
+				default:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+			}
 
 			LP.matbeg[k] = kount;
 
@@ -1421,7 +1525,7 @@ int AgileOpt::OptimizeHeu(void)
 	return 0;
 }
 
-int AgileOpt::OptimizeHeu_Improved(void)
+int AgileOpt::OptimizeHeu_Improved(int select_method)
 {
 	long i, j, k, h, j1, kk;
 	long kount;
@@ -1488,10 +1592,6 @@ int AgileOpt::OptimizeHeu_Improved(void)
 		for (j = 0; j < n; j++)
 		{
 			// Funzione obiettivo migliorata
-			double baseValue = u[j] * rcr[j];
-			double earlyFactor = (double)(m - i);
-
-			// Verifica dipendenze pronte
 			int depsReady = 0;
 			double ratio = 0.0;
 			if (nY == 0) {
@@ -1517,8 +1617,30 @@ int AgileOpt::OptimizeHeu_Improved(void)
 				}
 			}
 			double unlockBonus = 0.5 * unlocks;
-
-			LP.obj[k] = earlyFactor * baseValue * depPenalty + unlockBonus;
+			//k = i*n+j;
+			switch (select_method)
+			{
+				case 1:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+					break;
+				case 2:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j]  * depPenalty + unlockBonus;
+					break;
+				case 3:
+					LP.obj[k] = (original_m - i) * u[j] * run[j];
+					break;
+				case 4:
+					LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
+					break;
+				case 5:
+					LP.obj[k] = (original_m - i) * p[j];
+					break;
+				case 6:
+					LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
+					break;
+				default:
+					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+			}
 
 			LP.matbeg[k] = kount;
 
@@ -1826,7 +1948,7 @@ int AgileOpt::OptimizeHeu_Improved(void)
 //  Optimize heuristically the Agile Schedule by a Lagrangian Heuristc                                   
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::OptimizeLagrHeu(void)
+int AgileOpt::OptimizeLagrHeu(int select_method)
 {
 	long i,j,k,h,j1,kk;
 	long it;
@@ -1890,7 +2012,7 @@ int AgileOpt::OptimizeLagrHeu(void)
 	printf("\n\nSoluzione: \n\n");
 
 	// Try with the greedy procedure (one shot)
-	OptimizeHeu();
+	OptimizeHeu(select_method);
 	zheu = Zheu;
 	bestzheu = Zheu;
 
