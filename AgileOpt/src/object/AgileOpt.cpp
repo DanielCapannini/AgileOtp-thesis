@@ -665,15 +665,6 @@ int AgileOpt::Optimize(int select_method)
 	for (i=0; i<m; i++)
 		for (j=0; j<n; j++)
 		{
-
-			Flag = new long[n];
-			YMap = new long[n];
-			nYMap = 0;
-			for (j = 0; j < n; j++)
-			{
-				Flag[j] = 0;
-			}
-
 			int depsReady = 0;
 			double ratio = 0.0;
 			if (nY == 0) {
@@ -1783,6 +1774,8 @@ int AgileOpt::OptimizeHeu_Improved(int select_method)
 
 		LP.SolveMIP(&zheu, &Gap, &Nodes, &Cuts);
 
+		Zheu += zheu;
+
 		// --- Lettura soluzione ---
 		ptot = 0.0;
 		objtot = 0.0;
@@ -1801,16 +1794,6 @@ int AgileOpt::OptimizeHeu_Improved(int select_method)
 				SprintAssign[i][j] = 0;
 			}
 		}
-
-		// --- Calcolo Zheu aggiornato ---
-		Zheu = 0.0;
-		for (long si = 0; si <= i; si++)
-			for (long sj = 0; sj < n; sj++)
-				if (SprintAssign[si][sj])
-				{
-					Zheu += (original_m - si) * u[sj] * rcr[sj];
-					if (nY[sj] > 1) Zheu += a[sj] / (nY[sj] - 1);
-				}
 
 		// Output finale dello sprint
 		ptot = 0.0;
