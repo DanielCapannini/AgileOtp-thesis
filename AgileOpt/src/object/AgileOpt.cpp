@@ -22,7 +22,7 @@
 //
 AgileOpt::AgileOpt(void)
 {
-	ferr = fopen("Agile.err","w");
+	ferr = fopen("Agile.err", "w");
 
 	n = 0;       // Number of User Stories
 	m = 0;       // Number of Sprints
@@ -45,7 +45,7 @@ AgileOpt::AgileOpt(void)
 	FDepA = NULL;// FDepA[j] is 1 if the story j is involved in some dependency (Active)
 	FDepP = NULL;// FDepP[j] is 1 if the story j is involved in some dependency (Passive)
 
-	cfg.TimeLimit = 10.0*24.0*3600.0;  // 10 gg di runt-time
+	cfg.TimeLimit = 10.0 * 24.0 * 3600.0;  // 10 gg di runt-time
 	cfg.Sentinel = 0;
 	cfg.Pred = 0;
 	cfg.Cover = 0;
@@ -62,125 +62,129 @@ AgileOpt::AgileOpt(void)
 	DeviationRisk = 0.0;
 	DeviationUncertaintyRisk = 0.0;
 	HalfUtilitiSprint = -1;
+	UncertaintyMin = 0.0;
+	UncertaintyMax = 0.0;
+	RiskMin = 0.0;
+	RiskMax = 0.0;
 }
 
 long CountOccupiedSprints(const CplexObj& LP, long n, long m)
 {
-    long i, j;
-    long count = 0;
+	long i, j;
+	long count = 0;
 
-    for (i = 0; i < m; i++) {
-        for (j = 0; j < n; j++) {
-            if (LP.xt[i*n + j] > 0.5) {
-                count++;
-                break;
-            }
-        }
-    }
-    return count;
+	for (i = 0; i < m; i++) {
+		for (j = 0; j < n; j++) {
+			if (LP.xt[i * n + j] > 0.5) {
+				count++;
+				break;
+			}
+		}
+	}
+	return count;
 }
 
 double AverageSprintUtilization(const CplexObj& LP, long n, long m, const double* p, const double* run, const double* pmax)
 {
-    long i, j;
-    long occupied = 0;
-    double avg = 0.0;
+	long i, j;
+	long occupied = 0;
+	double avg = 0.0;
 
-    for (i = 0; i < m; i++) {
-        double used_points = 0.0;
-        bool used = false;
+	for (i = 0; i < m; i++) {
+		double used_points = 0.0;
+		bool used = false;
 
-        for (j = 0; j < n; j++) {
-            if (LP.xt[i*n + j] > 0.5) {
-                used = true;
-                used_points += p[j] * run[j];
-            }
-        }
+		for (j = 0; j < n; j++) {
+			if (LP.xt[i * n + j] > 0.5) {
+				used = true;
+				used_points += p[j] * run[j];
+			}
+		}
 
-        if (used) {
-            occupied++;
-            avg += used_points / pmax[i];
-        }
-    }
+		if (used) {
+			occupied++;
+			avg += used_points / pmax[i];
+		}
+	}
 
-    return (occupied > 0) ? avg / occupied : 0.0;
+	return (occupied > 0) ? avg / occupied : 0.0;
 }
 
 double SprintRiskStdDev(const CplexObj& LP, long n, long m, const double* rcr)
 {
-    long i, j;
+	long i, j;
 
-    double *R = new double[m];
-    for (i = 0; i < m; i++)
-        R[i] = 0.0;
+	double* R = new double[m];
+	for (i = 0; i < m; i++)
+		R[i] = 0.0;
 
-    for (i = 0; i < m; i++)
-        for (j = 0; j < n; j++)
-            if (LP.xt[i*n + j] > 0.5)
-                R[i] += rcr[j];
+	for (i = 0; i < m; i++)
+		for (j = 0; j < n; j++)
+			if (LP.xt[i * n + j] > 0.5)
+				R[i] += rcr[j];
 
-    double mean = 0.0;
-    for (i = 0; i < m; i++)
-        mean += R[i];
-    mean /= m;
+	double mean = 0.0;
+	for (i = 0; i < m; i++)
+		mean += R[i];
+	mean /= m;
 
-    double var = 0.0;
-    for (i = 0; i < m; i++)
-        var += (R[i] - mean) * (R[i] - mean);
+	double var = 0.0;
+	for (i = 0; i < m; i++)
+		var += (R[i] - mean) * (R[i] - mean);
 
-    delete [] R;
+	delete[] R;
 
-    return sqrt(var / m);
+	return sqrt(var / m);
 }
 
 double SprintUncertaintyStdDev(const CplexObj& LP, long n, long m, const double* run)
 {
-    long i, j;
+	long i, j;
 
-    double *U = new double[m];
-    for (i = 0; i < m; i++)
-        U[i] = 0.0;
+	double* U = new double[m];
+	for (i = 0; i < m; i++)
+		U[i] = 0.0;
 
-    for (i = 0; i < m; i++)
-        for (j = 0; j < n; j++)
-            if (LP.xt[i*n + j] > 0.5)
-                U[i] += run[j];
+	for (i = 0; i < m; i++)
+		for (j = 0; j < n; j++)
+			if (LP.xt[i * n + j] > 0.5)
+				U[i] += run[j];
 
-    double mean = 0.0;
-    for (i = 0; i < m; i++)
-        mean += U[i];
-    mean /= m;
+	double mean = 0.0;
+	for (i = 0; i < m; i++)
+		mean += U[i];
+	mean /= m;
 
-    double var = 0.0;
-    for (i = 0; i < m; i++)
-        var += (U[i] - mean) * (U[i] - mean);
+	double var = 0.0;
+	for (i = 0; i < m; i++)
+		var += (U[i] - mean) * (U[i] - mean);
 
-    delete [] U;
+	delete[] U;
 
-    return sqrt(var / m);
+	return sqrt(var / m);
 }
 
-long SprintHalfUtility(const CplexObj& LP, long n, long m, const double* u) 
+long SprintHalfUtility(const CplexObj& LP, long n, long m, const double* u)
 {
-    long i, j;
+	long i, j;
 
-    double U_tot = 0.0;
-    for (j = 0; j < n; j++)
-        U_tot += u[j];
+	double U_tot = 0.0;
+	for (j = 0; j < n; j++)
+		U_tot += u[j];
 
-    double U_cum = 0.0;
+	double U_cum = 0.0;
 
-    for (i = 0; i < m; i++) {
-        for (j = 0; j < n; j++) {
-            if (LP.xt[i*n + j] > 0.5)
-                U_cum += u[j];
-        }
+	for (i = 0; i < m; i++) {
+		for (j = 0; j < n; j++) {
+			if (LP.xt[i * n + j] > 0.5)
+				U_cum += u[j];
+		}
 
-        if (U_cum >= U_tot / 2.0)
-            return i;
-    }
+		if (U_cum >= U_tot / 2.0)
+			return i;
+	}
 
-    return -1;  // mai raggiunta
+	return -1;  // mai raggiunta
 }
 
 
@@ -192,51 +196,51 @@ AgileOpt::~AgileOpt(void)
 {
 	long j;
 
-	if (a!=NULL) {delete [] a; a = NULL;}    
-	if (u!=NULL) {delete [] u; u = NULL;}
-	if (ur!=NULL) {delete [] ur; ur = NULL;}
-	if (p!=NULL) {delete [] p; p = NULL;}
-	if (pr!=NULL) {delete [] pr; pr = NULL;}
-	if (pmax!=NULL) {delete [] pmax; pmax = NULL;}
-	if (rcr!=NULL) {delete [] rcr; rcr = NULL;}
-	if (run!=NULL) {delete [] run; run = NULL;}
+	if (a != NULL) { delete[] a; a = NULL; }
+	if (u != NULL) { delete[] u; u = NULL; }
+	if (ur != NULL) { delete[] ur; ur = NULL; }
+	if (p != NULL) { delete[] p; p = NULL; }
+	if (pr != NULL) { delete[] pr; pr = NULL; }
+	if (pmax != NULL) { delete[] pmax; pmax = NULL; }
+	if (rcr != NULL) { delete[] rcr; rcr = NULL; }
+	if (run != NULL) { delete[] run; run = NULL; }
 
-	if (nY!=NULL)
+	if (nY != NULL)
 	{
-		for (j=0; j<n; j++) 
-			if (Y[j]!=NULL) {delete [] Y[j]; Y[j] = NULL;}
-		delete [] Y;
-		delete [] nY;
+		for (j = 0; j < n; j++)
+			if (Y[j] != NULL) { delete[] Y[j]; Y[j] = NULL; }
+		delete[] Y;
+		delete[] nY;
 	}
-	if (nD!=NULL)
+	if (nD != NULL)
 	{
-		for (j=0; j<n; j++) 
-			if (D[j]!=NULL) {delete [] D[j]; D[j] = NULL;}
-		delete [] D;
-		delete [] nD;
+		for (j = 0; j < n; j++)
+			if (D[j] != NULL) { delete[] D[j]; D[j] = NULL; }
+		delete[] D;
+		delete[] nD;
 	}
-	if (nUOR!=NULL)
+	if (nUOR != NULL)
 	{
-		for (j=0; j<n; j++) 
-			if (UOR[j]!=NULL) {delete [] UOR[j]; UOR[j] = NULL;}
-		delete [] UOR;
-		delete [] nUOR;
-	}
-
-	if (nUAND!=NULL)
-	{
-		for (j=0; j<n; j++) 
-			if (UAND[j]!=NULL) {delete [] UAND[j]; UAND[j] = NULL;}
-		delete [] UAND;
-		delete [] nUAND;
+		for (j = 0; j < n; j++)
+			if (UOR[j] != NULL) { delete[] UOR[j]; UOR[j] = NULL; }
+		delete[] UOR;
+		delete[] nUOR;
 	}
 
-	if (FDepA!=NULL) {delete [] FDepA; FDepA = NULL;}
-	if (FDepP!=NULL) {delete [] FDepP; FDepP = NULL;}
+	if (nUAND != NULL)
+	{
+		for (j = 0; j < n; j++)
+			if (UAND[j] != NULL) { delete[] UAND[j]; UAND[j] = NULL; }
+		delete[] UAND;
+		delete[] nUAND;
+	}
 
-	n = 0;       
-	m = 0;       
-	
+	if (FDepA != NULL) { delete[] FDepA; FDepA = NULL; }
+	if (FDepP != NULL) { delete[] FDepP; FDepP = NULL; }
+
+	n = 0;
+	m = 0;
+
 	fclose(ferr);
 
 }
@@ -245,69 +249,82 @@ AgileOpt::~AgileOpt(void)
 //  Read the instance from Text File "name"                                    
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::ReadData(const char *name)
+int AgileOpt::ReadData(const char* name)
 {
-	FILE *fin;
-	long nr,nr1;
-	long i,j,i1,j1,i2;
+	FILE* fin;
+	long nr, nr1;
+	long i, j, i1, j1, i2;
 	long nlist;
-	long *list;
+	long* list;
 	double aux;
 	char Dep[8];
+	printf("Reading data from file %s...\n", name);
 
-	fin=fopen(name,"r");
+	fin = fopen(name, "r");
+	if (fin == NULL) 
+		printf("Errore apertura file");
 
+	printf("File opened\n");
 	// Read the number of user stories and of sprints
-	fscanf(fin,"%d %d",&n,&m);
+	fscanf(fin, "%d %d", &n, &m);
 
 	original_m = m;
+	printf("n=%d m=%d\n", n, m);
 
 	// Read Utility
-	u = new double [n];
-	for (j=0; j<n; j++)
-		fscanf(fin,"%lf%",&(u[j]));
+	u = new double[n];
+	for (j = 0; j < n; j++)
+		fscanf(fin, "%lf", &(u[j]));
+
+	printf("Utilities read\n");
 
 	// Read Criticality Risk
-	rcr = new double [n];
-	ur = new double [n];
-	for (j=0; j<n; j++)
+	rcr = new double[n];
+	ur = new double[n];
+	for (j = 0; j < n; j++)
 	{
-		fscanf(fin,"%lf%",&(rcr[j]));
-		ur[j] = u[j]*rcr[j];
+		fscanf(fin, "%lf", &(rcr[j]));
+		ur[j] = u[j] * rcr[j];
 	}
+
+	printf("Criticality Risks read\n");
 	// Read Uncertainty Risk
-	run = new double [n];
-	for (j=0; j<n; j++)
-		fscanf(fin,"%lf%",&(run[j]));
+	run = new double[n];
+	for (j = 0; j < n; j++)
+		fscanf(fin, "%lf", &(run[j]));
+	printf("Uncertainty Risks read\n");
 
 	// Read Number of Story Points
-	p = new double [n];
-	pr = new double [n];
-	for (j=0; j<n; j++)
+	p = new double[n];
+	pr = new double[n];
+	for (j = 0; j < n; j++)
 	{
-		fscanf(fin,"%lf%",&(p[j]));
-		pr[j]=p[j]*run[j];
+		fscanf(fin, "%lf", &(p[j]));
+		pr[j] = p[j] * run[j];
 	}
 
+	printf("Story Points read\n");
+
 	// Read Affinity
-	a = new double [n];
-	nY = new long [n];
+	a = new double[n];
+	nY = new long[n];
 	Y = new long* [n];
-	list = new long [n];
-	for (j=0; j<n; j++)
+	list = new long[n];
+	for (j = 0; j < n; j++)
 	{
 		a[j] = 0.0;
 		nY[j] = 1;
-		Y[j] = new long [n];
+		Y[j] = new long[n];
 		Y[j][0] = j;  // We suppose that Yj containts at least j...
 	}
-	fscanf(fin,"%d",&nr);
-	for (i=0; i<nr; i++)
+	fscanf(fin, "%d", &nr);
+	printf("Reading Affinities...\n");
+	for (i = 0; i < nr; i++)
 	{
-		nlist=0;
+		nlist = 0;
 		//fscanf(fin,"%lf %d",&aux,&nr1);
-		fscanf(fin,"%lf",&aux);
-		GetList(fin,&nlist,list);
+		fscanf(fin, "%lf", &aux);
+		GetList(fin, &nlist, list);
 		//for (i1=0; i1<nr1; i1++)
 		//{
 		//	fscanf(fin,"%d",&j1);
@@ -315,88 +332,88 @@ int AgileOpt::ReadData(const char *name)
 		//	list[nlist]=j1;
 		//	nlist++;
 		//}
-		for (i1=0; i1<nlist; i1++)
+		for (i1 = 0; i1 < nlist; i1++)
 		{
-			j1=list[i1];
-			nY[j1]=nlist;
-			a[j1]=aux;
-			for (i2=0; i2<nlist; i2++)
-				Y[j1][i2]=list[i2];
+			j1 = list[i1];
+			nY[j1] = nlist;
+			a[j1] = aux;
+			for (i2 = 0; i2 < nlist; i2++)
+				Y[j1][i2] = list[i2];
 		}
 	}
-	delete [] list;
+	delete[] list;
 
 	// Read AND/OR Dependancy
-	nD = new long [n];
+	nD = new long[n];
 	D = new long* [n];
-	nUOR = new long [n];
+	nUOR = new long[n];
 	UOR = new long* [n];
-	nUAND = new long [n];
+	nUAND = new long[n];
 	UAND = new long* [n];
-	FDepA = new long [n];
-	FDepP = new long [n];
-	for (j=0; j<n; j++)
+	FDepA = new long[n];
+	FDepP = new long[n];
+	for (j = 0; j < n; j++)
 	{
 		nD[j] = 0;
-		D[j] = new long [n];
+		D[j] = new long[n];
 		nUOR[j] = 0;
-		UOR[j] = new long [n];
+		UOR[j] = new long[n];
 		nUAND[j] = 0;
-		UAND[j] = new long [n];
+		UAND[j] = new long[n];
 		FDepA[j] = 0;
 		FDepP[j] = 0;
 	}
-	fscanf(fin,"%d",&nr);
-	for (i=0; i<nr; i++)
+	fscanf(fin, "%d", &nr);
+	for (i = 0; i < nr; i++)
 	{
-		fscanf(fin,"%d %s",&j1,Dep);
-		GetList(fin,&(nD[j1]),D[j1]);
+		fscanf(fin, "%d %s", &j1, Dep);
+		GetList(fin, &(nD[j1]), D[j1]);
 
 		FDepA[j1] = 1;
-		if (strcmp(Dep,"OR")==0)
+		if (strcmp(Dep, "OR") == 0)
 		{
 			nUOR[j1] = nD[j1];
-			for (i1=0; i1<nD[j1]; i1++)
+			for (i1 = 0; i1 < nD[j1]; i1++)
 			{
 				UOR[j1][i1] = D[j1][i1];
 				FDepP[D[j1][i1]] = 1;
 			}
 		}
-		else if (strcmp(Dep,"AND")==0)
+		else if (strcmp(Dep, "AND") == 0)
 		{
 			nUAND[j1] = nD[j1];
-			for (i1=0; i1<nD[j1]; i1++)
+			for (i1 = 0; i1 < nD[j1]; i1++)
 			{
 				UAND[j1][i1] = D[j1][i1];
 				FDepP[D[j1][i1]] = 1;
 			}
 		}
-		else 
+		else
 		{
 			printf("\nERROR... while reading dependency\n");
-			fprintf(ferr,"\nERROR... while reading dependency\n");
+			fprintf(ferr, "\nERROR... while reading dependency\n");
 			exit(1);
 		}
 	}
 
 	// Read Sprint Capacities
 	//m=10;
-	pmax = new double [m];
-	for (i=0; i<m; i++)
-		fscanf(fin,"%lf",&(pmax[i]));
+	pmax = new double[m];
+	for (i = 0; i < m; i++)
+		fscanf(fin, "%lf", &(pmax[i]));
 
- 	fclose(fin);
+	fclose(fin);
 
 	return 0;
 }
 
-void SkipList(FILE *fin)
+void SkipList(FILE* fin)
 {
-    long nlist;
-    fscanf(fin, "%d", &nlist);
-    long dummy;
-    for (long k = 0; k < nlist; k++)
-        fscanf(fin, "%ld", &dummy);
+	long nlist;
+	fscanf(fin, "%d", &nlist);
+	long dummy;
+	for (long k = 0; k < nlist; k++)
+		fscanf(fin, "%ld", &dummy);
 }
 
 
@@ -404,69 +421,69 @@ void SkipList(FILE *fin)
 //  Read the instance from Text File "name"                                    
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::ReadDataWithoutConstraints(const char *name)
+int AgileOpt::ReadDataWithoutConstraints(const char* name)
 {
-	FILE *fin;
-	long nr,nr1;
-	long i,j,i1,j1,i2;
+	FILE* fin;
+	long nr, nr1;
+	long i, j, i1, j1, i2;
 	long nlist;
-	long *list;
+	long* list;
 	double aux;
 	char Dep[8];
 
-	fin=fopen(name,"r");
+	fin = fopen(name, "r");
 
 	// Read the number of user stories and of sprints
-	fscanf(fin,"%d %d",&n,&m);
+	fscanf(fin, "%d %d", &n, &m);
 
 	original_m = m;
 
 	// Read Utility
-	u = new double [n];
-	for (j=0; j<n; j++)
-		fscanf(fin,"%lf%",&(u[j]));
+	u = new double[n];
+	for (j = 0; j < n; j++)
+		fscanf(fin, "%lf%", &(u[j]));
 
 	// Read Criticality Risk
-	rcr = new double [n];
-	ur = new double [n];
-	for (j=0; j<n; j++)
+	rcr = new double[n];
+	ur = new double[n];
+	for (j = 0; j < n; j++)
 	{
-		fscanf(fin,"%lf%",&(rcr[j]));
-		ur[j] = u[j]*rcr[j];
+		fscanf(fin, "%lf%", &(rcr[j]));
+		ur[j] = u[j] * rcr[j];
 	}
 	// Read Uncertainty Risk
-	run = new double [n];
-	for (j=0; j<n; j++)
-		fscanf(fin,"%lf%",&(run[j]));
+	run = new double[n];
+	for (j = 0; j < n; j++)
+		fscanf(fin, "%lf%", &(run[j]));
 
 	// Read Number of Story Points
-	p = new double [n];
-	pr = new double [n];
-	for (j=0; j<n; j++)
+	p = new double[n];
+	pr = new double[n];
+	for (j = 0; j < n; j++)
 	{
-		fscanf(fin,"%lf%",&(p[j]));
-		pr[j]=p[j]*run[j];
+		fscanf(fin, "%lf%", &(p[j]));
+		pr[j] = p[j] * run[j];
 	}
 
 	// Read Affinity
-	a = new double [n];
-	nY = new long [n];
+	a = new double[n];
+	nY = new long[n];
 	Y = new long* [n];
-	list = new long [n];
-	for (j=0; j<n; j++)
+	list = new long[n];
+	for (j = 0; j < n; j++)
 	{
 		a[j] = 0.0;
 		nY[j] = 1;
-		Y[j] = new long [n];
+		Y[j] = new long[n];
 		Y[j][0] = j;  // We suppose that Yj containts at least j...
 	}
-	fscanf(fin,"%d",&nr);
-	for (i=0; i<nr; i++)
+	fscanf(fin, "%d", &nr);
+	for (i = 0; i < nr; i++)
 	{
-		nlist=0;
+		nlist = 0;
 		//fscanf(fin,"%lf %d",&aux,&nr1);
-		fscanf(fin,"%lf",&aux);
-		GetList(fin,&nlist,list);
+		fscanf(fin, "%lf", &aux);
+		GetList(fin, &nlist, list);
 		//for (i1=0; i1<nr1; i1++)
 		//{
 		//	fscanf(fin,"%d",&j1);
@@ -474,42 +491,42 @@ int AgileOpt::ReadDataWithoutConstraints(const char *name)
 		//	list[nlist]=j1;
 		//	nlist++;
 		//}
-		for (i1=0; i1<nlist; i1++)
+		for (i1 = 0; i1 < nlist; i1++)
 		{
-			j1=list[i1];
-			nY[j1]=nlist;
-			a[j1]=aux;
-			for (i2=0; i2<nlist; i2++)
-				Y[j1][i2]=list[i2];
+			j1 = list[i1];
+			nY[j1] = nlist;
+			a[j1] = aux;
+			for (i2 = 0; i2 < nlist; i2++)
+				Y[j1][i2] = list[i2];
 		}
 	}
-	delete [] list;
+	delete[] list;
 
 	// Read AND/OR Dependancy
-	nD = new long [n];
+	nD = new long[n];
 	D = new long* [n];
-	nUOR = new long [n];
+	nUOR = new long[n];
 	UOR = new long* [n];
-	nUAND = new long [n];
+	nUAND = new long[n];
 	UAND = new long* [n];
-	FDepA = new long [n];
-	FDepP = new long [n];
-	for (j=0; j<n; j++)
+	FDepA = new long[n];
+	FDepP = new long[n];
+	for (j = 0; j < n; j++)
 	{
 		nD[j] = 0;
-		D[j] = new long [n];
+		D[j] = new long[n];
 		nUOR[j] = 0;
-		UOR[j] = new long [n];
+		UOR[j] = new long[n];
 		nUAND[j] = 0;
-		UAND[j] = new long [n];
+		UAND[j] = new long[n];
 		FDepA[j] = 0;
 		FDepP[j] = 0;
 	}
-	fscanf(fin,"%d",&nr);
-	for (i=0; i<nr; i++)
+	fscanf(fin, "%d", &nr);
+	for (i = 0; i < nr; i++)
 	{
-		fscanf(fin,"%d %s",&j1,Dep);
-		GetList(fin,&(nD[j1]),D[j1]);
+		fscanf(fin, "%d %s", &j1, Dep);
+		GetList(fin, &(nD[j1]), D[j1]);
 
 		/*
 		FDepA[j1] = 1;
@@ -531,7 +548,7 @@ int AgileOpt::ReadDataWithoutConstraints(const char *name)
 				FDepP[D[j1][i1]] = 1;
 			}
 		}
-		else 
+		else
 		{
 			printf("\nERROR... while reading dependency\n");
 			fprintf(ferr,"\nERROR... while reading dependency\n");
@@ -541,11 +558,11 @@ int AgileOpt::ReadDataWithoutConstraints(const char *name)
 
 	// Read Sprint Capacities
 	//m=10;
-	pmax = new double [m];
-	for (i=0; i<m; i++)
-		fscanf(fin,"%lf",&(pmax[i]));
+	pmax = new double[m];
+	for (i = 0; i < m; i++)
+		fscanf(fin, "%lf", &(pmax[i]));
 
- 	fclose(fin);
+	fclose(fin);
 
 	return 0;
 }
@@ -555,43 +572,43 @@ int AgileOpt::ReadDataWithoutConstraints(const char *name)
 //  Utility for reading a list of integer values of unknown lenght                                    
 //-----------------------------------------------------------------------------
 //
-long AgileOpt::GetList(FILE *fin, long *nlist, long *list)
+long AgileOpt::GetList(FILE* fin, long* nlist, long* list)
 {
 	static char line[255];
 	char cc;
-	long k,h,status;
+	long k, h, status;
 	int bol;
 
-	h=0;
+	h = 0;
 loop0:
 
-	k=0;
-	bol=0;
+	k = 0;
+	bol = 0;
 loop1:
-	cc=fgetc(fin);
-	if ((cc>='0')&&(cc<='9'))
+	cc = fgetc(fin);
+	if ((cc >= '0') && (cc <= '9'))
 	{
-		bol=1;
-		line[k]=cc;
+		bol = 1;
+		line[k] = cc;
 		k++;
 		goto loop1;
 	}
 
-	if (bol<1)
+	if (bol < 1)
 	{
-		if (cc!='\n')
+		if (cc != '\n')
 			goto loop0;
 	}
 	else
 	{
-		line[k]='\0';
-		list[h]=atoi(line);
+		line[k] = '\0';
+		list[h] = atoi(line);
 		h++;
-		if (cc!='\n')
+		if (cc != '\n')
 			goto loop0;
 	}
 
-	*nlist=h;
+	*nlist = h;
 
 	return k;
 }
@@ -602,14 +619,14 @@ loop1:
 //
 int AgileOpt::Optimize(int select_method)
 {
-	long i,j,k,h,j1,kk;
+	long i, j, k, h, j1, kk;
 	long kount;
 	double obj;
 	double ptot;
 	double objtot;
 	double objval;
 	long nYMap;
-	long *YMap;
+	long* YMap;
 
 	// Reductions
 	// Reduction();
@@ -622,20 +639,20 @@ int AgileOpt::Optimize(int select_method)
 	CplexObj LP;
 
 	// Auxiliary array to map variables "yij"
-	YMap = new long [n*m];
+	YMap = new long[n * m];
 	k = 0;
 	nYMap = 0;
-	for (i=0; i<m; i++)
-		for (j=0; j<n; j++)
+	for (i = 0; i < m; i++)
+		for (j = 0; j < n; j++)
 		{
-			if ((nY[j]>1)&&(a[j]>Prec))
-			//if (a[j]>-Inf)
+			if ((nY[j] > 1) && (a[j] > Prec))
+				//if (a[j]>-Inf)
 			{
-				YMap[k]=nYMap;
+				YMap[k] = nYMap;
 				nYMap++;
 			}
 			else
-				YMap[k]=-1;
+				YMap[k] = -1;
 			k++;
 		}
 
@@ -644,26 +661,26 @@ int AgileOpt::Optimize(int select_method)
 	//LP.nrows = m + n + 2*n*m;  // OR/AND constraints are added later
 	//LP.nz = (n*m)*(3+n) + (n*m)*(1+n);  // We overestimate |Yj|=n
 
-	LP.ncols = n*m+nYMap;
-	LP.nrows = m + n + 2*nYMap;  // OR/AND constraints are added later
-	LP.nz = (n*m)*(3+n) + (nYMap)*(1+n);  // We overestimate |Yj|=n
+	LP.ncols = n * m + nYMap;
+	LP.nrows = m + n + 2 * nYMap;  // OR/AND constraints are added later
+	LP.nz = (n * m) * (3 + n) + (nYMap) * (1 + n);  // We overestimate |Yj|=n
 	if (cfg.Sentinel)
 	{
 		LP.ncols += m;
 		LP.nrows += m;
-		LP.nz += n+m;
+		LP.nz += n + m;
 	}
 	LP.nsos = n;
-	LP.nsosnz = n*m;
+	LP.nsosnz = n * m;
 	LP.MallocCols();
 
-	long *Flag;
+	long* Flag;
 
 	// Load Columns/Variables xij in the Cplex data structure
 	k = 0;
 	kount = 0;
-	for (i=0; i<m; i++)
-		for (j=0; j<n; j++)
+	for (i = 0; i < m; i++)
+		for (j = 0; j < n; j++)
 		{
 			int depsReady = 0;
 			double ratio = 0.0;
@@ -679,7 +696,7 @@ int AgileOpt::Optimize(int select_method)
 				}
 				ratio = (double)depsReady / nY[j];
 			}
-			double depPenalty = 0.25 + 0.75 * ratio; 
+			double depPenalty = 0.25 + 0.75 * ratio;
 
 			// Conta quante storie j sblocca
 			int unlocks = 0;
@@ -693,26 +710,26 @@ int AgileOpt::Optimize(int select_method)
 			//k = i*n+j;
 			switch (select_method)
 			{
-				case 1:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
-					break;
-				case 2:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j]  * depPenalty + unlockBonus;
-					break;
-				case 3:
-					LP.obj[k] = (original_m - i) * u[j] * run[j];
-					break;
-				case 4:
-					LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
-					break;
-				case 5:
-					LP.obj[k] = (original_m - i) * p[j];
-					break;
-				case 6:
-					LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
-					break;
-				default:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+			case 1:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+				break;
+			case 2:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j] * depPenalty + unlockBonus;
+				break;
+			case 3:
+				LP.obj[k] = (original_m - i) * u[j] * run[j];
+				break;
+			case 4:
+				LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
+				break;
+			case 5:
+				LP.obj[k] = (original_m - i) * p[j];
+				break;
+			case 6:
+				LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
+				break;
+			default:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
 			}
 
 			LP.matbeg[k] = kount;
@@ -722,27 +739,27 @@ int AgileOpt::Optimize(int select_method)
 			LP.matval[kount] = pr[j];
 			kount++;
 
-			LP.matind[kount] = m+j;
+			LP.matind[kount] = m + j;
 			LP.matval[kount] = 1.;
 			kount++;
 
-			for (h=0; h<nY[j]; h++)
+			for (h = 0; h < nY[j]; h++)
 			{
 				j1 = Y[j][h];
-				if ((YMap[i*n+j1]>=0)&&(j1!=j))
+				if ((YMap[i * n + j1] >= 0) && (j1 != j))
 				{
 					//LP.matind[kount] = m+n+i*n+j1;
-					LP.matind[kount] = m+n+YMap[i*n+j1];
+					LP.matind[kount] = m + n + YMap[i * n + j1];
 					LP.matval[kount] = -1.;
 					kount++;
 				}
 			}
 
-			if (YMap[i*n+j]>=0)
+			if (YMap[i * n + j] >= 0)
 			{
 				//LP.matind[kount] = m+n+n*m+i*n+j;
-				LP.matind[kount] = m+n+nYMap+YMap[i*n+j];
-				LP.matval[kount] = -(double)(nY[j]-1);
+				LP.matind[kount] = m + n + nYMap + YMap[i * n + j];
+				LP.matval[kount] = -(double)(nY[j] - 1);
 				//LP.matval[kount] = -(double)(nY[j]);
 				kount++;
 			}
@@ -750,7 +767,7 @@ int AgileOpt::Optimize(int select_method)
 			// Sentinel Constraint
 			if (cfg.Sentinel)
 			{
-				LP.matind[kount] = m + n + 2*nYMap + i;
+				LP.matind[kount] = m + n + 2 * nYMap + i;
 				LP.matval[kount] = 1.0;
 				kount++;
 			}
@@ -770,20 +787,20 @@ int AgileOpt::Optimize(int select_method)
 
 	// Load Columns/Variables yij in the Cplex data structure
 	kk = 0;
-	for (i=0; i<m; i++)
-		for (j=0; j<n; j++)
+	for (i = 0; i < m; i++)
+		for (j = 0; j < n; j++)
 		{
-			if (YMap[kk]<0)
+			if (YMap[kk] < 0)
 			{
 				kk++;
 				continue;
 			}
 
 			//k = i*n+j;
-			if (nY[j]<2)
+			if (nY[j] < 2)
 				LP.obj[k] = 0.0;
 			else
-				LP.obj[k] = (original_m-i)*u[j]*a[j]/(nY[j]-1);
+				LP.obj[k] = (original_m - i) * u[j] * a[j] / (nY[j] - 1);
 
 			//LP.obj[k] = (i+1)*a[j]/nY[j];
 			//LP.obj[k] = 0.0;
@@ -791,12 +808,12 @@ int AgileOpt::Optimize(int select_method)
 			LP.matbeg[k] = kount;
 
 			//LP.matind[kount] = m+n+i*n+j;
-			LP.matind[kount] = m+n+YMap[kk];
+			LP.matind[kount] = m + n + YMap[kk];
 			LP.matval[kount] = +1.0;
 			kount++;
 
 			//LP.matind[kount] = m+n+n*m+i*n+j;
-			LP.matind[kount] = m+n+nYMap+YMap[kk];
+			LP.matind[kount] = m + n + nYMap + YMap[kk];
 			LP.matval[kount] = +1.0;
 			kount++;
 
@@ -818,13 +835,13 @@ int AgileOpt::Optimize(int select_method)
 	{
 		// Load Columns/Variables related to Sentinel constraints in the Cplex data structure
 		kk = 0;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
 			LP.obj[k] = 0.0;
 
 			LP.matbeg[k] = kount;
 
-			LP.matind[kount] = m + n + 2*nYMap + i;
+			LP.matind[kount] = m + n + 2 * nYMap + i;
 			LP.matval[kount] = -1.0;
 			kount++;
 
@@ -843,44 +860,44 @@ int AgileOpt::Optimize(int select_method)
 		}
 	}
 
-	LP.matbeg[k]=kount;
+	LP.matbeg[k] = kount;
 
 	// Load Constraints in the Cplex data structure
-	kount=0;
-	for (i=0; i<m; i++)
+	kount = 0;
+	for (i = 0; i < m; i++)
 	{
-		LP.rhs[kount]=pmax[i];
-		LP.sense[kount]='L';
+		LP.rhs[kount] = pmax[i];
+		LP.sense[kount] = 'L';
 		kount++;
 	}
 
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		LP.rhs[kount]=1.0;
-		LP.sense[kount]='E';
+		LP.rhs[kount] = 1.0;
+		LP.sense[kount] = 'E';
 		kount++;
 	}
 
-	for (k=0; k<nYMap; k++)
+	for (k = 0; k < nYMap; k++)
 	{
-		LP.rhs[kount]=0.0;
-		LP.sense[kount]='L';
+		LP.rhs[kount] = 0.0;
+		LP.sense[kount] = 'L';
 		kount++;
 	}
 
-	for (k=0; k<nYMap; k++)
+	for (k = 0; k < nYMap; k++)
 	{
-		LP.rhs[kount]=0.0;
-		LP.sense[kount]='L';
+		LP.rhs[kount] = 0.0;
+		LP.sense[kount] = 'L';
 		kount++;
 	}
 
 	if (cfg.Sentinel)
 	{
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='E';
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'E';
 			kount++;
 		}
 	}
@@ -901,24 +918,24 @@ int AgileOpt::Optimize(int select_method)
 	//		kount++;
 	//	}
 
-    // Define SOS
+	// Define SOS
 	k = 0;
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		LP.typesos[j] = CPX_TYPE_SOS1;
 		LP.sosbeg[j] = k;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			LP.sosind[k] = i*n+j;
+			LP.sosind[k] = i * n + j;
 			// LP.soswt[k] = (double)(m-i);
 			LP.soswt[k] = (double)(i);
 			k++;
 		}
 	}
-	LP.sosbeg[n]=k;
+	LP.sosbeg[n] = k;
 
 	// Maximization problem
-	LP.minmax=-1;
+	LP.minmax = -1;
 
 	// Load Problem
 	LP.CopyLP();
@@ -930,96 +947,112 @@ int AgileOpt::Optimize(int select_method)
 	LP.SetMIP(cfg.TimeLimit);
 
 	// Setup Custom Cutting Plane
-	LP.CuttingPlane(n,m,ur,pr,pmax,nY,Y,nUOR,UOR,nUAND,UAND,FDepA,FDepP,cfg.Pred,cfg.Cover,cfg.Lifting,cfg.KnapSol,cfg.MaxCuts,&Cuts);
+	LP.CuttingPlane(n, m, ur, pr, pmax, nY, Y, nUOR, UOR, nUAND, UAND, FDepA, FDepP, cfg.Pred, cfg.Cover, cfg.Lifting, cfg.KnapSol, cfg.MaxCuts, &Cuts);
 
-	if (cfg.AddLB>0)
+	if (cfg.AddLB > 0)
 		LP.SetLB(Zheu);
 
 	// Optimize
-	LP.SolveMIP(&Zopt,&Gap,&Nodes,&Cuts);
+	LP.SolveMIP(&Zopt, &Gap, &Nodes, &Cuts);
 
 	// Read the solution
 	printf("\n\nSoluzione: \n\n");
-	objval=0.0;
-	k=0;
-	kk=n*m;
+	objval = 0.0;
+	k = 0;
+	kk = n * m;
 
 	NSprintsUsed = 0;
 	PercentageUtilization = 0;
 	DeviationRisk = 0.0;
 	DeviationUncertaintyRisk = 0.0;
 	HalfUtilitiSprint = -1;
-	double *sprint_risks = new double[m];
-	double *sprint_uncertainties = new double[m];
+	UncertaintyMin = 0.0;
+	UncertaintyMax = 0.0;
+	RiskMax = 0.0;
+	RiskMin = 0.0;
+	double* sprint_risks = new double[m];
+	double* sprint_uncertainties = new double[m];
 	for (i = 0; i < m; i++) {
 		sprint_risks[i] = 0.0;
 		sprint_uncertainties[i] = 0.0;
 	}
 
 	double halftotal_utility = 0.0;
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 		halftotal_utility += u[j];
 	halftotal_utility /= 2.0;
 
 	int count = 0;
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
-		ptot=0.0;
-		objtot=0.0;
-		printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
+		ptot = 0.0;
+		objtot = 0.0;
+		printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
 		double sprint_utilization = 0.0;
 
 		double avg_sprint_risk = 0.0;
 		double avg_sprint_uncertainty = 0.0;
+		double un = 0.0;
+		double risk = 0.0;
 		int nn = 0;
 
 		// Variables xij
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (LP.xt[k]>0.001)
+			if (LP.xt[k] > 0.001)
 			{
-				ptot += p[j]*run[j];
+				ptot += p[j] * run[j];
 				objtot += LP.obj[k];
 				//printf("%d ",j);
-				printf("%d (%.1lf) ",j,pr[j]);
+				printf("%d (%.1lf) ", j, pr[j]);
 				sprint_utilization += pr[j];
-				printf("%d (%.1lf) ",j,pr[j]);
 				avg_sprint_risk += rcr[j];
 				avg_sprint_uncertainty += run[j];
 				halftotal_utility -= u[j];
+				un += run[j];
+				risk += rcr[j];
+				printf(" [u=%lf rcr=%lf run=%lf] ", u[j], rcr[j], run[j]);
 				nn++;
 			}
 			k++;
 		}
-		avg_sprint_risk /= (double)(nn>0?nn:1);
-		avg_sprint_uncertainty /= (double)(nn>0?nn:1);
+		avg_sprint_risk /= (double)(nn > 0 ? nn : 1);
+		avg_sprint_uncertainty /= (double)(nn > 0 ? nn : 1);
 		sprint_risks[i] = avg_sprint_risk;
 		sprint_uncertainties[i] = avg_sprint_uncertainty;
-		if(sprint_utilization > 0.0){
+		if(risk > RiskMax)
+				RiskMax = risk;
+			if((risk < RiskMin && risk > 0.0) || RiskMin == 0.0)
+				RiskMin = risk;
+			if(un > UncertaintyMax)
+				UncertaintyMax = un;
+			if((un < UncertaintyMin && un > 0.0) || UncertaintyMin == 0.0)
+				UncertaintyMin = un;
+		if (sprint_utilization > 0.0) {	
 			PercentageUtilization += sprint_utilization / pmax[i];
 			count++;
 			NSprintsUsed++;
 		}
-		if(halftotal_utility <= 0.0 && HalfUtilitiSprint < 0){
+		if (halftotal_utility <= 0.0 && HalfUtilitiSprint < 0) {
 			HalfUtilitiSprint = NSprintsUsed;
 		}
 
 		// Variables yij
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (YMap[i*n+j]<0)
+			if (YMap[i * n + j] < 0)
 				continue;
 
-			if (LP.xt[kk]>0.001)
+			if (LP.xt[kk] > 0.001)
 			{
 				objtot += LP.obj[kk];
-		//		printf("y(%d,%d) = %fl   objcoef = %lf\n",i,j,LP.xt[kk],LP.obj[kk]);
+				//		printf("y(%d,%d) = %fl   objcoef = %lf\n",i,j,LP.xt[kk],LP.obj[kk]);
 			}
 			kk++;
 		}
 
 		objval += objtot;
-		printf("\n  ptot=%lf     objtot=%lf\n",ptot,objtot);
+		printf("\n  ptot=%lf     objtot=%lf\n", ptot, objtot);
 
 	}
 
@@ -1050,16 +1083,19 @@ int AgileOpt::Optimize(int select_method)
 	if (NSprintsUsed > 0) {
 		DeviationRisk = sqrt(var_risk / NSprintsUsed);
 		DeviationUncertaintyRisk = sqrt(var_uncertainty / NSprintsUsed);
-	} else {
+	}
+	else {
 		DeviationRisk = 0.0;
 		DeviationUncertaintyRisk = 0.0;
 	}
 
-	delete [] sprint_risks;
-	delete [] sprint_uncertainties;
+	delete[] sprint_risks;
+	delete[] sprint_uncertainties;
 
 	PercentageUtilization /= (double)count;
 
+	printf("\n risk min=%lf max=%lf", RiskMin, RiskMax);
+	printf("\n uncertainty min=%lf max=%lf", UncertaintyMin, UncertaintyMax);
 	printf("\n Number of Occupied Sprints: %ld", NSprintsUsed);
 	printf("\n Average Sprint Utilization: %lf", PercentageUtilization);
 	printf("\n Sprint Risk Standard Deviation: %lf", DeviationRisk);
@@ -1069,10 +1105,10 @@ int AgileOpt::Optimize(int select_method)
 	else
 		printf("\n Half of Total Utility is not achieved in any sprint.");
 
-	printf("\n Zopt=%lf\n",objval);
+	printf("\n Zopt=%lf\n", objval);
 
 	// Free auxiliary data structures
-	delete [] YMap;
+	delete[] YMap;
 
 	return 0;
 }
@@ -1084,15 +1120,15 @@ int AgileOpt::Optimize(int select_method)
 //
 int AgileOpt::OptimizeHeu(int select_method)
 {
-	long i,j,k,h,j1,kk;
+	long i, j, k, h, j1, kk;
 	long kount;
 	double obj;
 	double ptot;
 	double objtot;
 	double objval;
 	long nYMap;
-	long *YMap;
-	long *Flag;
+	long* YMap;
+	long* Flag;
 
 	double zheu;
 
@@ -1102,20 +1138,20 @@ int AgileOpt::OptimizeHeu(int select_method)
 	printf("\n\nSoluzione: \n\n");
 
 	// Auxiliary array to map variables "yij"
-	Flag = new long [n];
-	YMap = new long [n];
+	Flag = new long[n];
+	YMap = new long[n];
 	nYMap = 0;
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		Flag[j] = 0;
-		if ((nY[j]>1)&&(a[j]>Prec))
-		//if (a[j]>-Inf)
+		if ((nY[j] > 1) && (a[j] > Prec))
+			//if (a[j]>-Inf)
 		{
-			YMap[j]=nYMap;
+			YMap[j] = nYMap;
 			nYMap++;
 		}
 		else
-			YMap[j]=-1;
+			YMap[j] = -1;
 	}
 
 
@@ -1130,26 +1166,26 @@ int AgileOpt::OptimizeHeu(int select_method)
 
 	CplexObj LP;
 
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		// LP local into the loop body
 
 		// Set problem size
-		LP.ncols = n+nYMap;
-		LP.nrows = 1 + 2*nYMap;  // OR/AND constraints are added later
-		LP.nz = (n)*(2+n) + (nYMap)*(1+n);  // We overestimate |Yj|=n
+		LP.ncols = n + nYMap;
+		LP.nrows = 1 + 2 * nYMap;  // OR/AND constraints are added later
+		LP.nz = (n) * (2 + n) + (nYMap) * (1 + n);  // We overestimate |Yj|=n
 		if (cfg.Sentinel)
 		{
 			LP.ncols += 1;
 			LP.nrows += 1;
-			LP.nz += n+1;
+			LP.nz += n + 1;
 		}
 		LP.MallocCols();
 
 		// Load Columns/Variables xj in the Cplex data structure
 		k = 0;
 		kount = 0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
 			//k = i*n+j;
 			int depsReady = 0;
@@ -1166,7 +1202,7 @@ int AgileOpt::OptimizeHeu(int select_method)
 				}
 				ratio = (double)depsReady / nY[j];
 			}
-			double depPenalty = 0.25 + 0.75 * ratio; 
+			double depPenalty = 0.25 + 0.75 * ratio;
 
 			// Conta quante storie j sblocca
 			int unlocks = 0;
@@ -1180,26 +1216,26 @@ int AgileOpt::OptimizeHeu(int select_method)
 			//k = i*n+j;
 			switch (select_method)
 			{
-				case 1:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
-					break;
-				case 2:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j]  * depPenalty + unlockBonus;
-					break;
-				case 3:
-					LP.obj[k] = (original_m - i) * u[j] * run[j];
-					break;
-				case 4:
-					LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
-					break;
-				case 5:
-					LP.obj[k] = (original_m - i) * p[j];
-					break;
-				case 6:
-					LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
-					break;
-				default:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+			case 1:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+				break;
+			case 2:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j] * depPenalty + unlockBonus;
+				break;
+			case 3:
+				LP.obj[k] = (original_m - i) * u[j] * run[j];
+				break;
+			case 4:
+				LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
+				break;
+			case 5:
+				LP.obj[k] = (original_m - i) * p[j];
+				break;
+			case 6:
+				LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
+				break;
+			default:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
 			}
 
 			LP.matbeg[k] = kount;
@@ -1211,28 +1247,28 @@ int AgileOpt::OptimizeHeu(int select_method)
 			kount++;
 
 			// Linking Constraints xj and yj
-			for (h=0; h<nY[j]; h++)
+			for (h = 0; h < nY[j]; h++)
 			{
 				j1 = Y[j][h];
-				if ((YMap[j1]>=0)&&(j1!=j))
+				if ((YMap[j1] >= 0) && (j1 != j))
 				{
-					LP.matind[kount] = 1+YMap[j1];
+					LP.matind[kount] = 1 + YMap[j1];
 					LP.matval[kount] = -1.;
 					kount++;
 				}
 			}
 
-			if (YMap[j]>=0)
+			if (YMap[j] >= 0)
 			{
-				LP.matind[kount] = 1+nYMap+YMap[j];
-				LP.matval[kount] = -(double)(nY[j]-1);
+				LP.matind[kount] = 1 + nYMap + YMap[j];
+				LP.matval[kount] = -(double)(nY[j] - 1);
 				kount++;
 			}
 
 			// Sentinel Constraint
 			if (cfg.Sentinel)
 			{
-				LP.matind[kount] = 1 + 2*nYMap;
+				LP.matind[kount] = 1 + 2 * nYMap;
 				LP.matval[kount] = 1.0;
 				kount++;
 			}
@@ -1246,7 +1282,7 @@ int AgileOpt::OptimizeHeu(int select_method)
 			LP.xctype[k] = 'B';
 
 			LP.lb[k] = 0.0;
-			if (Flag[j]==0)
+			if (Flag[j] == 0)
 				LP.ub[k] = 1.0;
 			else
 				LP.ub[k] = 0.0;
@@ -1255,28 +1291,28 @@ int AgileOpt::OptimizeHeu(int select_method)
 
 		// Load Columns/Variables yij in the Cplex data structure
 		kk = 0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (YMap[kk]<0)
+			if (YMap[kk] < 0)
 			{
 				kk++;
 				continue;
 			}
 
 			//k = i*n+j;
-			if (nY[j]<2)
+			if (nY[j] < 2)
 				LP.obj[k] = 0.0;
 			else
-				LP.obj[k] = (original_m-i)*u[j]*a[j]/(nY[j]-1);
-				// LP.obj[k] = a[j]/(nY[j]-1);
+				LP.obj[k] = (original_m - i) * u[j] * a[j] / (nY[j] - 1);
+			// LP.obj[k] = a[j]/(nY[j]-1);
 
 			LP.matbeg[k] = kount;
 
-			LP.matind[kount] = 1+YMap[kk];
+			LP.matind[kount] = 1 + YMap[kk];
 			LP.matval[kount] = +1.0;
 			kount++;
 
-			LP.matind[kount] = 1+nYMap+YMap[kk];
+			LP.matind[kount] = 1 + nYMap + YMap[kk];
 			LP.matval[kount] = +1.0;
 			kount++;
 
@@ -1303,7 +1339,7 @@ int AgileOpt::OptimizeHeu(int select_method)
 
 			LP.matbeg[k] = kount;
 
-			LP.matind[kount] = 1 + 2*nYMap;
+			LP.matind[kount] = 1 + 2 * nYMap;
 			LP.matval[kount] = -1.0;
 			kount++;
 
@@ -1321,37 +1357,37 @@ int AgileOpt::OptimizeHeu(int select_method)
 			kk++;
 		}
 
-		LP.matbeg[k]=kount;
+		LP.matbeg[k] = kount;
 
 		// Load Constraints in the Cplex data structure
-		kount=0;
-		LP.rhs[kount]=pmax[i];
-		LP.sense[kount]='L';
+		kount = 0;
+		LP.rhs[kount] = pmax[i];
+		LP.sense[kount] = 'L';
 		kount++;
 
-		for (k=0; k<nYMap; k++)
+		for (k = 0; k < nYMap; k++)
 		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='L';
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
 			kount++;
 		}
 
-		for (k=0; k<nYMap; k++)
+		for (k = 0; k < nYMap; k++)
 		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='L';
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
 			kount++;
 		}
 
 		if (cfg.Sentinel)
 		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='E';
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'E';
 			kount++;
 		}
 
 		// Maximization problem
-		LP.minmax=-1;
+		LP.minmax = -1;
 
 		// Load Problem
 		LP.CopyLP();
@@ -1360,40 +1396,40 @@ int AgileOpt::OptimizeHeu(int select_method)
 		LP.SetMIP(cfg.TimeLimit);
 
 		// Setup Custom Cutting Plane
-		LP.CuttingPlaneHeu(n,m,ur,pr,pmax,nY,Y,nUOR,UOR,nUAND,UAND,Flag,FDepP,cfg.Pred,cfg.Cover,cfg.Lifting,cfg.KnapSol,cfg.MaxCuts,&Cuts,0);
+		LP.CuttingPlaneHeu(n, m, ur, pr, pmax, nY, Y, nUOR, UOR, nUAND, UAND, Flag, FDepP, cfg.Pred, cfg.Cover, cfg.Lifting, cfg.KnapSol, cfg.MaxCuts, &Cuts, 0);
 
 		// Optimize
-		LP.SolveMIP(&zheu,&Gap,&Nodes,&Cuts);
+		LP.SolveMIP(&zheu, &Gap, &Nodes, &Cuts);
 
 		Zheu += zheu;
 
 		// Read the solution
-		ptot=0.0;
-		objtot=0.0;
-		printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
+		ptot = 0.0;
+		objtot = 0.0;
+		printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
 
 		// Variables xj
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (LP.xt[j]>0.001)
+			if (LP.xt[j] > 0.001)
 			{
 				Flag[j] = 1;
-				ptot += p[j]*run[j];
+				ptot += p[j] * run[j];
 				objtot += LP.obj[j];
 				//printf("%d ",j);
-				printf("%d (%.1lf) ",j,pr[j]);
+				printf("%d (%.1lf) ", j, pr[j]);
 				SprintAssign[i][j] = 1;
 			}
 		}
 
 		// Variables yij
-		kk=n;
-		for (j=0; j<n; j++)
+		kk = n;
+		for (j = 0; j < n; j++)
 		{
-			if (YMap[j]<0)
+			if (YMap[j] < 0)
 				continue;
 
-			if (LP.xt[kk]>0.001)
+			if (LP.xt[kk] > 0.001)
 			{
 				objtot += LP.obj[kk];
 			}
@@ -1401,61 +1437,78 @@ int AgileOpt::OptimizeHeu(int select_method)
 		}
 
 		objval += objtot;
-		printf("\n  ptot=%lf    objtot=%lf\n",ptot,objtot);
+		printf("\n  ptot=%lf    objtot=%lf\n", ptot, objtot);
 
 	}
 
-	
-	NSprintsUsed =0;
+
+	NSprintsUsed = 0;
 	PercentageUtilization = 0;
 	DeviationRisk = 0.0;
 	DeviationUncertaintyRisk = 0.0;
 	HalfUtilitiSprint = -1;
-	double *sprint_risks = new double[m];
-	double *sprint_uncertainties = new double[m];
+	UncertaintyMin = 0.0;
+	UncertaintyMax = 0.0;
+	RiskMax = 0.0;
+	RiskMin = 0.0;
+	double* sprint_risks = new double[m];
+	double* sprint_uncertainties = new double[m];
 	for (i = 0; i < m; i++) {
 		sprint_risks[i] = 0.0;
 		sprint_uncertainties[i] = 0.0;
 	}
 
 	double halftotal_utility = 0.0;
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 		halftotal_utility += u[j];
 	halftotal_utility /= 2.0;
 
 	int count = 0;
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		double sprint_utilization = 0.0;
 
 		double avg_sprint_risk = 0.0;
 		double avg_sprint_uncertainty = 0.0;
+		double un = 0.0;
+		double risk = 0.0;
 		int nn = 0;
 
 		// Variables xij
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
 			if (SprintAssign[i][j])
 			{
 				sprint_utilization += pr[j];
-				printf("%d (%.1lf) ",j,pr[j]);
+				printf("%d (%.1lf) ", j, pr[j]);
 				avg_sprint_risk += rcr[j];
 				avg_sprint_uncertainty += run[j];
 				halftotal_utility -= u[j];
 				nn++;
+				un += run[j];
+				risk += rcr[j];
+				printf(" [u=%lf rcr=%lf run=%lf] ", u[j], rcr[j], run[j]);
 			}
 			k++;
 		}
-		avg_sprint_risk /= (double)(nn>0?nn:1);
-		avg_sprint_uncertainty /= (double)(nn>0?nn:1);
+		avg_sprint_risk /= (double)(nn > 0 ? nn : 1);
+		avg_sprint_uncertainty /= (double)(nn > 0 ? nn : 1);
 		sprint_risks[i] = avg_sprint_risk;
 		sprint_uncertainties[i] = avg_sprint_uncertainty;
-		if(sprint_utilization > 0.0){
+		if(risk > RiskMax)
+				RiskMax = risk;
+			if((risk < RiskMin && risk > 0.0) || RiskMin == 0.0)
+				RiskMin = risk;
+			if(un > UncertaintyMax)
+				UncertaintyMax = un;
+			if((un < UncertaintyMin && un > 0.0) || UncertaintyMin == 0.0)
+				UncertaintyMin = un;
+		if (sprint_utilization > 0.0) {
 			PercentageUtilization += sprint_utilization / pmax[i];
 			count++;
 			NSprintsUsed++;
 		}
-		if(halftotal_utility <= 0.0 && HalfUtilitiSprint < 0){
+		if (halftotal_utility <= 0.0 && HalfUtilitiSprint < 0) {
 			HalfUtilitiSprint = NSprintsUsed;
 		}
 
@@ -1488,16 +1541,19 @@ int AgileOpt::OptimizeHeu(int select_method)
 	if (NSprintsUsed > 0) {
 		DeviationRisk = sqrt(var_risk / NSprintsUsed);
 		DeviationUncertaintyRisk = sqrt(var_uncertainty / NSprintsUsed);
-	} else {
+	}
+	else {
 		DeviationRisk = 0.0;
 		DeviationUncertaintyRisk = 0.0;
 	}
 
-	delete [] sprint_risks;
-	delete [] sprint_uncertainties;
+	delete[] sprint_risks;
+	delete[] sprint_uncertainties;
 
 	PercentageUtilization /= (double)count;
 
+	printf("\n risk min=%lf max=%lf", RiskMin, RiskMax);
+	printf("\n uncertainty min=%lf max=%lf", UncertaintyMin, UncertaintyMax);
 	printf("\n Number of Occupied Sprints: %ld", NSprintsUsed);
 	printf("\n Average Sprint Utilization: %lf", PercentageUtilization);
 	printf("\n Sprint Risk Standard Deviation: %lf", DeviationRisk);
@@ -1507,11 +1563,11 @@ int AgileOpt::OptimizeHeu(int select_method)
 	else
 		printf("\n Half of Total Utility is not achieved in any sprint.");
 
-	printf("\n  Zheu=%lf\n",Zheu);
+	printf("\n  Zheu=%lf\n", Zheu);
 
 	// Free auxiliary data structures
-	delete [] Flag;
-	delete [] YMap;
+	delete[] Flag;
+	delete[] YMap;
 
 	return 0;
 }
@@ -1597,7 +1653,7 @@ int AgileOpt::OptimizeHeu_Improved(int select_method)
 				}
 				ratio = (double)depsReady / nY[j];
 			}
-			double depPenalty = 0.25 + 0.75 * ratio; 
+			double depPenalty = 0.25 + 0.75 * ratio;
 
 			// Conta quante storie j sblocca
 			int unlocks = 0;
@@ -1611,26 +1667,26 @@ int AgileOpt::OptimizeHeu_Improved(int select_method)
 			//k = i*n+j;
 			switch (select_method)
 			{
-				case 1:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
-					break;
-				case 2:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j]  * depPenalty + unlockBonus;
-					break;
-				case 3:
-					LP.obj[k] = (original_m - i) * u[j] * run[j];
-					break;
-				case 4:
-					LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
-					break;
-				case 5:
-					LP.obj[k] = (original_m - i) * p[j];
-					break;
-				case 6:
-					LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
-					break;
-				default:
-					LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+			case 1:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+				break;
+			case 2:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j] * depPenalty + unlockBonus;
+				break;
+			case 3:
+				LP.obj[k] = (original_m - i) * u[j] * run[j];
+				break;
+			case 4:
+				LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
+				break;
+			case 5:
+				LP.obj[k] = (original_m - i) * p[j];
+				break;
+			case 6:
+				LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
+				break;
+			default:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
 			}
 
 			LP.matbeg[k] = kount;
@@ -1811,59 +1867,76 @@ int AgileOpt::OptimizeHeu_Improved(int select_method)
 	}
 
 
-	NSprintsUsed =0;
+	NSprintsUsed = 0;
 	PercentageUtilization = 0;
 	DeviationRisk = 0.0;
 	DeviationUncertaintyRisk = 0.0;
 	HalfUtilitiSprint = -1;
-	double *sprint_risks = new double[m];
-	double *sprint_uncertainties = new double[m];
+	UncertaintyMin = 0.0;
+	UncertaintyMax = 0.0;
+	RiskMax = 0.0;
+	RiskMin = 0.0;
+	double* sprint_risks = new double[m];
+	double* sprint_uncertainties = new double[m];
 	for (i = 0; i < m; i++) {
 		sprint_risks[i] = 0.0;
 		sprint_uncertainties[i] = 0.0;
 	}
 
 	double halftotal_utility = 0.0;
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 		halftotal_utility += u[j];
 	halftotal_utility /= 2.0;
 
 	int count = 0;
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		double sprint_utilization = 0.0;
 
 		double avg_sprint_risk = 0.0;
 		double avg_sprint_uncertainty = 0.0;
+		double un = 0.0;
+		double risk = 0.0;
 		int nn = 0;
 
 		// Variables xij
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
 			if (SprintAssign[i][j])
 			{
 				sprint_utilization += pr[j];
-				printf("%d (%.1lf) ",j,pr[j]);
+				printf("%d (%.1lf) ", j, pr[j]);
 				avg_sprint_risk += rcr[j];
 				avg_sprint_uncertainty += run[j];
 				halftotal_utility -= u[j];
 				nn++;
+				un += run[j];
+				risk += rcr[j];
+				printf(" [u=%lf rcr=%lf run=%lf] ", u[j], rcr[j], run[j]);
 			}
 			k++;
 		}
 		printf("\n");
 		printf("Sprint Utilization: %lf\n", sprint_utilization);
 		printf("\n");
-		avg_sprint_risk /= (double)(nn>0?nn:1);
-		avg_sprint_uncertainty /= (double)(nn>0?nn:1);
+		avg_sprint_risk /= (double)(nn > 0 ? nn : 1);
+		avg_sprint_uncertainty /= (double)(nn > 0 ? nn : 1);
 		sprint_risks[i] = avg_sprint_risk;
 		sprint_uncertainties[i] = avg_sprint_uncertainty;
-		if(sprint_utilization > 0.0){
+		if(risk > RiskMax)
+				RiskMax = risk;
+			if((risk < RiskMin && risk > 0.0) || RiskMin == 0.0)
+				RiskMin = risk;
+			if(un > UncertaintyMax)
+				UncertaintyMax = un;
+			if((un < UncertaintyMin && un > 0.0) || UncertaintyMin == 0.0)
+				UncertaintyMin = un;
+		if (sprint_utilization > 0.0) {
 			PercentageUtilization += sprint_utilization / pmax[i];
 			count++;
 			NSprintsUsed++;
 		}
-		if(halftotal_utility <= 0.0 && HalfUtilitiSprint < 0){
+		if (halftotal_utility <= 0.0 && HalfUtilitiSprint < 0) {
 			HalfUtilitiSprint = NSprintsUsed;
 		}
 
@@ -1896,15 +1969,19 @@ int AgileOpt::OptimizeHeu_Improved(int select_method)
 	if (NSprintsUsed > 0) {
 		DeviationRisk = sqrt(var_risk / NSprintsUsed);
 		DeviationUncertaintyRisk = sqrt(var_uncertainty / NSprintsUsed);
-	} else {
+	}
+	else {
 		DeviationRisk = 0.0;
 		DeviationUncertaintyRisk = 0.0;
 	}
 
-	delete [] sprint_risks;
-	delete [] sprint_uncertainties;
+	delete[] sprint_risks;
+	delete[] sprint_uncertainties;
 
 	PercentageUtilization /= (double)count;
+
+	printf("\n risk min=%lf max=%lf", RiskMin, RiskMax);
+	printf("\n uncertainty min=%lf max=%lf", UncertaintyMin, UncertaintyMax);
 
 	printf("\n Number of Occupied Sprints: %ld", NSprintsUsed);
 	printf("\n Average Sprint Utilization: %lf", PercentageUtilization);
@@ -1933,30 +2010,30 @@ int AgileOpt::OptimizeHeu_Improved(int select_method)
 //
 int AgileOpt::OptimizeLagrHeu(int select_method)
 {
-	long i,j,k,h,j1,kk;
+	long i, j, k, h, j1, kk;
 	long it;
 	long kount;
 	double obj;
 	double ptot;
 	long nYMap;
-	long *YMap;
-	long *Flag;
-	double *urpen;
-	double *apen;
-	double *xlr;
-	double *ylr;
-	double *xheu;
-	double *yheu;
-	double *Lambda;
-	double *LambdaOR;
-	double *LambdaAND;
-	double *LambdaY1;
-	double *LambdaY2;
-	double *subgr;
-	double *subgrOR;
-	double *subgrAND;
-	double *subgrY1;
-	double *subgrY2;
+	long* YMap;
+	long* Flag;
+	double* urpen;
+	double* apen;
+	double* xlr;
+	double* ylr;
+	double* xheu;
+	double* yheu;
+	double* Lambda;
+	double* LambdaOR;
+	double* LambdaAND;
+	double* LambdaY1;
+	double* LambdaY2;
+	double* subgr;
+	double* subgrOR;
+	double* subgrAND;
+	double* subgrY1;
+	double* subgrY2;
 
 	double Konst;
 	double zheut;
@@ -1972,13 +2049,13 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 	long maxbadit;
 	long badit;
 
-	int status,bol,bolheu;
-	long t1,t2;
+	int status, bol, bolheu;
+	long t1, t2;
 	double dt;
 
 	t1 = clock();
 
-//2012	alpha = 0.1;  // 0.1 (0.2 converge piu' veloce, pero' 0.1 e' piu' stabile)
+	//2012	alpha = 0.1;  // 0.1 (0.2 converge piu' veloce, pero' 0.1 e' piu' stabile)
 	alpha = 30.0;  // Best=24-30   (24) (10) 0.1 (0.2 converge piu' veloce, pero' 0.1 e' piu' stabile)
 	maxiter = 5000;
 	maxitgap = 50; // Best=50
@@ -1999,35 +2076,143 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 	zheu = Zheu;
 	bestzheu = Zheu;
 
+	Flag = new long[n];
+	YMap = new long[n];
+	nYMap = 0;
+	for (j = 0; j < n; j++)
+	{
+		Flag[j] = 0;
+		if ((nY[j] > 1) && (a[j] > Prec))
+			//if (a[j]>-Inf)
+		{
+			YMap[j] = nYMap;
+			nYMap++;
+		}
+		else
+			YMap[j] = -1;
+	}
+
 	// Allocate Lagrangian Penalties
-	urpen = new double [n*m];
-	apen = new double [n*m];
-	xlr = new double [n*m];
-	ylr = new double [n*m];
-	xheu = new double [n*m];
-	yheu = new double [n*m];
-	Lambda = new double [n];
-	LambdaOR = new double [n*m];
-	LambdaAND = new double [n*m];
-	LambdaY1 = new double [n*m];
-	LambdaY2 = new double [n*m];
-	subgr = new double [n];
-	subgrOR = new double [n*m];
-	subgrAND = new double [n*m];
-	subgrY1 = new double [n*m];
-	subgrY2 = new double [n*m];
-	for (j=0; j<n; j++)
+	urpen = new double[n * m];
+	apen = new double[n * m];
+	xlr = new double[n * m];
+	ylr = new double[n * m];
+	xheu = new double[n * m];
+	yheu = new double[n * m];
+	Lambda = new double[n];
+	LambdaOR = new double[n * m];
+	LambdaAND = new double[n * m];
+	LambdaY1 = new double[n * m];
+	LambdaY2 = new double[n * m];
+	subgr = new double[n];
+	subgrOR = new double[n * m];
+	subgrAND = new double[n * m];
+	subgrY1 = new double[n * m];
+	subgrY2 = new double[n * m];
+	for (j = 0; j < n; j++)
 	{
 		Lambda[j] = 0.0;
 		subgr[j] = 0.0;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			urpen[k] = (m-i)*ur[j];
-			if (nY[j]<2)
+			k = i * n + j;
+			int depsReady = 0;
+			double ratio = 0.0;
+
+			if (nY[j] == 0) {
+				ratio = 1.0;
+			}
+			else {
+				for (h = 0; h < nY[j]; h++) {
+					int dep = Y[j][h];
+					if (Flag[dep] == 1)
+						depsReady++;
+				}
+				ratio = (double)depsReady / nY[j];
+			}
+
+			double depPenalty = 0.25 + 0.75 * ratio;
+
+			// -----------------------------
+			// Unlock bonus
+			// -----------------------------
+			int unlocks = 0;
+			for (kk = 0; kk < n; kk++) {
+				for (h = 0; h < nY[kk]; h++) {
+					if (Y[kk][h] == j)
+						unlocks++;
+				}
+			}
+			double unlockBonus = 0.5 * unlocks;
+
+			// -----------------------------
+			// Base coefficient
+			// -----------------------------
+			double base = (original_m - i);
+			double objCoeff = 0.0;
+
+			// -----------------------------
+			// Objective selector
+			// -----------------------------
+			switch (select_method)
+			{
+			case 1:
+				objCoeff = base * u[j] * rcr[j];
+				break;
+			case 2:
+				objCoeff = base * u[j] * rcr[j] * depPenalty + unlockBonus;
+				break;
+			case 3:
+				objCoeff = base * u[j] * run[j];
+				break;
+			case 4:
+				objCoeff = base * u[j] * run[j] * depPenalty + unlockBonus;
+				break;
+			case 5:
+				objCoeff = base * p[j];
+				break;
+			case 6:
+				objCoeff = base * p[j] * depPenalty + unlockBonus;
+				break;
+			default:
+				objCoeff = base * u[j] * rcr[j];
+			}
+
+			// -----------------------------
+			// Assign objective profit
+			// -----------------------------
+			urpen[k] = objCoeff;
+
+			// -----------------------------
+			// AND-penalty (apen) � scaled coherently
+			// -----------------------------
+			if (nY[j] < 2) {
 				apen[k] = 0.0;
-			else
-				apen[k] = (m-i)*u[j]*a[j]/(nY[j]-1);
+			}
+			else {
+
+				double scale = 1.0;
+
+				switch (select_method)
+				{
+				case 1:
+				case 2:
+					scale = u[j] * rcr[j];
+					break;
+				case 3:
+				case 4:
+					scale = u[j] * run[j];
+					break;
+				case 5:
+				case 6:
+					scale = p[j];
+					break;
+				default:
+					scale = u[j] * rcr[j];
+				}
+
+				apen[k] = base * scale * a[j] / (nY[j] - 1);
+			}
 			LambdaOR[k] = 0.0;
 			LambdaAND[k] = 0.0;
 			LambdaY1[k] = 0.0;
@@ -2043,32 +2228,17 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 	}
 
 	// Auxiliary array to map variables "yij"
-	Flag = new long [n];
-	YMap = new long [n];
-	nYMap = 0;
-	for (j=0; j<n; j++)
-	{
-		Flag[j] = 0;
-		if ((nY[j]>1)&&(a[j]>Prec))
-		//if (a[j]>-Inf)
-		{
-			YMap[j]=nYMap;
-			nYMap++;
-		}
-		else
-			YMap[j]=-1;
-	}
 
-	for (it=0; it<1000; it++)
+	for (it = 0; it < 1000; it++)
 	{
 		// Compute the penalized price 
 		//ComputePenPrice(urpen,Lambda,LambdaOR,LambdaAND,&Konst);
-		ComputePenPriceDP(urpen,apen,Lambda,LambdaOR,LambdaAND,LambdaY1,LambdaY2,&Konst);
+		ComputePenPriceDP(urpen, apen, Lambda, LambdaOR, LambdaAND, LambdaY1, LambdaY2, &Konst);
 
 		// Compute the Lagrangian Problem Solution
 		//SolveLR(urpen,apen,nYMap,YMap,Flag,Konst,&zlr,xlr,ylr);
-		SolveLRDP(urpen,apen,nYMap,YMap,Flag,Konst,&zlr,xlr,ylr);
-		if (bestzlr>zlr) 
+		SolveLRDP(urpen, apen, nYMap, YMap, Flag, Konst, &zlr, xlr, ylr);
+		if (bestzlr > zlr)
 		{
 			bolheu = 1;
 			bestzlr = zlr;
@@ -2078,9 +2248,9 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 		{
 			bolheu = 0;
 			badit++;
-			if (badit>=maxbadit)
+			if (badit >= maxbadit)
 			{
-				alpha = 0.85*alpha;
+				alpha = 0.85 * alpha;
 				badit = 0;
 			}
 		}
@@ -2089,24 +2259,24 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 		//LagrHeu(urpen,apen,nYMap,YMap,Flag,&zheu,xheu,yheu); 
 		//if (bestzheu<zheu) 
 		//	bestzheu = zheu;
-		if ((bolheu)||(it<0))
+		if ((bolheu) || (it < 0))
 		{
 			//LagrHeuDP(urpen,nYMap,YMap,Flag,&zheu,xheu,yheu); 
-			LagrHeuDPBack(urpen,nYMap,YMap,Flag,&zheu,xheu,yheu); 
-			if (zheu>0.0)
+			LagrHeuDPBack(urpen, nYMap, YMap, Flag, &zheu, xheu, yheu, select_method);
+			if (zheu > 0.0)
 			{
 				// HeuSwaps(&zheu,xheu,yheu);
-				if (bestzheu<zheu) 
+				if (bestzheu < zheu)
 					bestzheu = zheu;
-				if (cfg.HeuBest*bestzheu<zheu) 
+				if (cfg.HeuBest * bestzheu < zheu)
 				{
 					//if (bestzheu<zheu) 
 					//	bestzheu = zheu;
-					LagrHeu(urpen,apen,nYMap,YMap,Flag,&zheu,xheu,yheu); 
-					if (zheu>0.0)
+					LagrHeu(urpen, apen, nYMap, YMap, Flag, &zheu, xheu, yheu, select_method);
+					if (zheu > 0.0)
 					{
 						//HeuSwaps(&zheu,xheu,yheu);
-						if (bestzheu<zheu) 
+						if (bestzheu < zheu)
 							bestzheu = zheu;
 					}
 				}
@@ -2117,9 +2287,9 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 		//if (bestzheu<zheu) 
 		//	bestzheu = zheu;
 
-		if ((it%maxitgap)==0)
+		if ((it % maxitgap) == 0)
 		{
-			if ((100.*(zgap-bestzlr)/bestzlr)<mingap)
+			if ((100. * (zgap - bestzlr) / bestzlr) < mingap)
 				break;
 			else
 				zgap = bestzlr;
@@ -2127,45 +2297,45 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 
 		// Update penalties
 		//UpdatePen(alpha,bestzheu,zlr,xlr,Lambda,LambdaOR,LambdaAND,subgr,subgrOR,subgrAND);
-		UpdatePenDP(alpha,bestzheu,zlr,xlr,ylr,Lambda,LambdaOR,LambdaAND,LambdaY1,LambdaY2,subgr,subgrOR,subgrAND,subgrY1,subgrY2);
+		UpdatePenDP(alpha, bestzheu, zlr, xlr, ylr, Lambda, LambdaOR, LambdaAND, LambdaY1, LambdaY2, subgr, subgrOR, subgrAND, subgrY1, subgrY2);
 
-		if ((it%100)==0)
-			printf("%d) Zlr=%.1lf    Zheu=%.1lf    BestZlr=%.1lf    BestZheu=%.1lf    Alpha=%.5lf    Konst=%.5lf\n",it,zlr,zheu,bestzlr,bestzheu,alpha,Konst);
+		if ((it % 100) == 0)
+			printf("%d) Zlr=%.1lf    Zheu=%.1lf    BestZlr=%.1lf    BestZheu=%.1lf    Alpha=%.5lf    Konst=%.5lf\n", it, zlr, zheu, bestzlr, bestzheu, alpha, Konst);
 
 		t2 = clock();
-		dt = (double)(t2-t1)/CLOCKS_PER_SEC;
+		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
 		// Check Time Limit
-		if (dt>cfg.TimeLimit)
+		if (dt > cfg.TimeLimit)
 			break;
 	}
 
 	Zheu = bestzheu;
 	Zlagr = bestzlr;
 
-	printf("\n  Zheu=%lf\n",Zheu);
+	printf("\n  Zheu=%lf\n", Zheu);
 
 	// Free Penalty vectors
-	delete [] urpen;
-	delete [] apen;
-	delete [] xlr;
-	delete [] ylr;
-	delete [] xheu;
-	delete [] yheu;
-	delete [] Lambda;
-	delete [] LambdaOR;
-	delete [] LambdaAND;
-	delete [] LambdaY1;
-	delete [] LambdaY2;
-	delete [] subgr;
-	delete [] subgrOR;
-	delete [] subgrAND;
-	delete [] subgrY1;
-	delete [] subgrY2;
+	delete[] urpen;
+	delete[] apen;
+	delete[] xlr;
+	delete[] ylr;
+	delete[] xheu;
+	delete[] yheu;
+	delete[] Lambda;
+	delete[] LambdaOR;
+	delete[] LambdaAND;
+	delete[] LambdaY1;
+	delete[] LambdaY2;
+	delete[] subgr;
+	delete[] subgrOR;
+	delete[] subgrAND;
+	delete[] subgrY1;
+	delete[] subgrY2;
 
 	// Free auxiliary data structures
-	delete [] Flag;
-	delete [] YMap;
+	delete[] Flag;
+	delete[] YMap;
 
 	return 0;
 }
@@ -2175,42 +2345,42 @@ int AgileOpt::OptimizeLagrHeu(int select_method)
 //  Optimize heuristically the Agile Schedule by a Lagrangian Heuristc                                   
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::ComputePenPrice(double *urpen, double *Lambda, double *LambdaOR, double *LambdaAND, double *Konst)
+int AgileOpt::ComputePenPrice(double* urpen, double* Lambda, double* LambdaOR, double* LambdaAND, double* Konst)
 {
-	long i,j,k;
-	long i1,j1,k1;
+	long i, j, k;
+	long i1, j1, k1;
 	long jj;
 	double PKonst;
 
 	PKonst = 0.0;
-	
+
 	// Assignment constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		PKonst += Lambda[j];
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			urpen[k] = (m-i)*ur[j] - Lambda[j];
+			k = i * n + j;
+			urpen[k] = (m - i) * ur[j] - Lambda[j];
 		}
 	}
 
 	// OR Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUOR[j]==0) 
+		if (nUOR[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			urpen[k] += LambdaOR[k];
-			for (i1=0; i1<=i; i1++)
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUOR[j]; jj++)
+				for (jj = 0; jj < nUOR[j]; jj++)
 				{
 					j1 = UOR[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					urpen[k1] -= LambdaOR[k];
 				}
 			}
@@ -2218,21 +2388,21 @@ int AgileOpt::ComputePenPrice(double *urpen, double *Lambda, double *LambdaOR, d
 	}
 
 	// AND Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUAND[j]==0) 
+		if (nUAND[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			urpen[k] += (double)nUAND[j]*LambdaAND[k];
-			for (i1=0; i1<=i; i1++)
+			k = i * n + j;
+			urpen[k] += (double)nUAND[j] * LambdaAND[k];
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUAND[j]; jj++)
+				for (jj = 0; jj < nUAND[j]; jj++)
 				{
 					j1 = UAND[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					urpen[k1] -= LambdaAND[k];
 				}
 			}
@@ -2249,43 +2419,43 @@ int AgileOpt::ComputePenPrice(double *urpen, double *Lambda, double *LambdaOR, d
 //  Optimize heuristically the Agile Schedule by a Lagrangian Heuristc                                   
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::ComputePenPriceDP(double *urpen, double *apen, double *Lambda, double *LambdaOR, double *LambdaAND,  
-	                            double *LambdaY1, double *LambdaY2, double *Konst)
+int AgileOpt::ComputePenPriceDP(double* urpen, double* apen, double* Lambda, double* LambdaOR, double* LambdaAND,
+	double* LambdaY1, double* LambdaY2, double* Konst)
 {
-	long i,j,k;
-	long i1,j1,k1;
+	long i, j, k;
+	long i1, j1, k1;
 	long jj;
 	double PKonst;
 
 	PKonst = 0.0;
-	
+
 	// Assignment constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		PKonst += Lambda[j];
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			urpen[k] = (m-i)*ur[j] - Lambda[j];
+			k = i * n + j;
+			urpen[k] = (m - i) * ur[j] - Lambda[j];
 		}
 	}
 
 	// OR Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUOR[j]==0) 
+		if (nUOR[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			urpen[k] += LambdaOR[k];
-			for (i1=0; i1<=i; i1++)
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUOR[j]; jj++)
+				for (jj = 0; jj < nUOR[j]; jj++)
 				{
 					j1 = UOR[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					urpen[k1] -= LambdaOR[k];
 				}
 			}
@@ -2293,21 +2463,21 @@ int AgileOpt::ComputePenPriceDP(double *urpen, double *apen, double *Lambda, dou
 	}
 
 	// AND Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUAND[j]==0) 
+		if (nUAND[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			urpen[k] += (double)nUAND[j]*LambdaAND[k];
-			for (i1=0; i1<=i; i1++)
+			k = i * n + j;
+			urpen[k] += (double)nUAND[j] * LambdaAND[k];
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUAND[j]; jj++)
+				for (jj = 0; jj < nUAND[j]; jj++)
 				{
 					j1 = UAND[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					urpen[k1] -= LambdaAND[k];
 				}
 			}
@@ -2315,38 +2485,38 @@ int AgileOpt::ComputePenPriceDP(double *urpen, double *apen, double *Lambda, dou
 	}
 
 	// Constraints Y1
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2) 
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			apen[k] = (m-i)*u[j]*a[j]/(nY[j]-1) + LambdaY1[k];
-			for (jj=0; jj<nY[j]; jj++)
+			k = i * n + j;
+			apen[k] = (m - i) * u[j] * a[j] / (nY[j] - 1) + LambdaY1[k];
+			for (jj = 0; jj < nY[j]; jj++)
 			{
 				j1 = Y[j][jj];
-				if (j1==j)
+				if (j1 == j)
 					continue;
 
-				k1 = i*n+j1;
+				k1 = i * n + j1;
 				urpen[k1] -= LambdaY1[k];
 			}
 		}
 	}
 
 	// Constraints Y2
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2) 
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			apen[k] += LambdaY2[k];
-			urpen[k] -= (double)(nY[j]-1)*LambdaY2[k];
+			urpen[k] -= (double)(nY[j] - 1) * LambdaY2[k];
 		}
 	}
 
@@ -2360,16 +2530,16 @@ int AgileOpt::ComputePenPriceDP(double *urpen, double *apen, double *Lambda, dou
 // Compute the Lagrangian Problem Solution
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long *Flag, double Konst, double *zlr, double *xlr, double *ylr)
+int AgileOpt::SolveLR(double* urpen, double* apen, long nYMap, long* YMap, long* Flag, double Konst, double* zlr, double* xlr, double* ylr)
 {
-	long i,j,k,h,j1,kk,k1;
+	long i, j, k, h, j1, kk, k1;
 	long kount;
 	double ptot;
 	double objtot;
 	double objval;
 	double zlrt;
 
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		Flag[j] = 0;
 	}
@@ -2378,29 +2548,29 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 	objval = 0.0;
 	(*zlr) = Konst;
 
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		// LP local into the loop body
 		CplexObj LP;
 
 		// Set problem size
-		LP.ncols = n+nYMap;
-		LP.nrows = 1 + 2*nYMap;  // OR/AND constraints are added later
-		LP.nz = (n)*(2+n) + (nYMap)*(1+n);  // We overestimate |Yj|=n
+		LP.ncols = n + nYMap;
+		LP.nrows = 1 + 2 * nYMap;  // OR/AND constraints are added later
+		LP.nz = (n) * (2 + n) + (nYMap) * (1 + n);  // We overestimate |Yj|=n
 		if (cfg.Sentinel)
 		{
 			LP.ncols += 1;
 			LP.nrows += 1;
-			LP.nz += n+1;
+			LP.nz += n + 1;
 		}
 		LP.MallocCols();
 
 		// Load Columns/Variables xj in the Cplex data structure
 		k = 0;
 		kount = 0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			kk = i*n+j;
+			kk = i * n + j;
 			//LP.obj[k] = (m-i)*urpen[k];
 			LP.obj[k] = urpen[kk];
 
@@ -2413,28 +2583,28 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 			kount++;
 
 			// Linking Constraints xj and yj
-			for (h=0; h<nY[j]; h++)
+			for (h = 0; h < nY[j]; h++)
 			{
 				j1 = Y[j][h];
-				if ((YMap[j1]>=0)&&(j1!=j))
+				if ((YMap[j1] >= 0) && (j1 != j))
 				{
-					LP.matind[kount] = 1+YMap[j1];
+					LP.matind[kount] = 1 + YMap[j1];
 					LP.matval[kount] = -1.;
 					kount++;
 				}
 			}
 
-			if (YMap[j]>=0)
+			if (YMap[j] >= 0)
 			{
-				LP.matind[kount] = 1+nYMap+YMap[j];
-				LP.matval[kount] = -(double)(nY[j]-1);
+				LP.matind[kount] = 1 + nYMap + YMap[j];
+				LP.matval[kount] = -(double)(nY[j] - 1);
 				kount++;
 			}
 
 			// Sentinel Constraint
 			if (cfg.Sentinel)
 			{
-				LP.matind[kount] = 1 + 2*nYMap;
+				LP.matind[kount] = 1 + 2 * nYMap;
 				LP.matval[kount] = 1.0;
 				kount++;
 			}
@@ -2448,7 +2618,7 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 			LP.xctype[k] = 'B';
 
 			LP.lb[k] = 0.0;
-			if (Flag[j]==0)
+			if (Flag[j] == 0)
 				LP.ub[k] = 1.0;
 			else
 				LP.ub[k] = 0.0;
@@ -2457,29 +2627,29 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 
 		// Load Columns/Variables yij in the Cplex data structure
 		kk = 0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (YMap[kk]<0)
+			if (YMap[kk] < 0)
 			{
 				kk++;
 				continue;
 			}
 
-			k1 = i*n+j;
-			if (nY[j]<2)
+			k1 = i * n + j;
+			if (nY[j] < 2)
 				LP.obj[k] = 0.0;
 			else
 				LP.obj[k] = apen[k1];
-				//LP.obj[k] = (m-i)*u[j]*a[j]/(nY[j]-1);
-				// LP.obj[k] = a[j]/(nY[j]-1);
+			//LP.obj[k] = (m-i)*u[j]*a[j]/(nY[j]-1);
+			// LP.obj[k] = a[j]/(nY[j]-1);
 
 			LP.matbeg[k] = kount;
 
-			LP.matind[kount] = 1+YMap[kk];
+			LP.matind[kount] = 1 + YMap[kk];
 			LP.matval[kount] = +1.0;
 			kount++;
 
-			LP.matind[kount] = 1+nYMap+YMap[kk];
+			LP.matind[kount] = 1 + nYMap + YMap[kk];
 			LP.matval[kount] = +1.0;
 			kount++;
 
@@ -2506,7 +2676,7 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 
 			LP.matbeg[k] = kount;
 
-			LP.matind[kount] = m + n + 2*nYMap;
+			LP.matind[kount] = m + n + 2 * nYMap;
 			LP.matval[kount] = -1.0;
 			kount++;
 
@@ -2524,37 +2694,37 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 			kk++;
 		}
 
-		LP.matbeg[k]=kount;
+		LP.matbeg[k] = kount;
 
 		// Load Constraints in the Cplex data structure
-		kount=0;
-		LP.rhs[kount]=pmax[i];
-		LP.sense[kount]='L';
+		kount = 0;
+		LP.rhs[kount] = pmax[i];
+		LP.sense[kount] = 'L';
 		kount++;
 
-		for (k=0; k<nYMap; k++)
+		for (k = 0; k < nYMap; k++)
 		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='L';
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
 			kount++;
 		}
 
-		for (k=0; k<nYMap; k++)
+		for (k = 0; k < nYMap; k++)
 		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='L';
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
 			kount++;
 		}
 
 		if (cfg.Sentinel)
 		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='E';
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'E';
 			kount++;
 		}
 
 		// Maximization problem
-		LP.minmax=-1;
+		LP.minmax = -1;
 
 		// Load Problem
 		LP.CopyLP();
@@ -2563,30 +2733,30 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 		LP.SetMIP(cfg.TimeLimit);
 
 		// Setup Custom Cutting Plane
-		LP.CuttingPlaneHeu(n,m,ur,pr,pmax,nY,Y,nUOR,UOR,nUAND,UAND,Flag,FDepP,cfg.Pred,cfg.Cover,cfg.Lifting,cfg.KnapSol,cfg.MaxCuts,&Cuts,i);
+		LP.CuttingPlaneHeu(n, m, ur, pr, pmax, nY, Y, nUOR, UOR, nUAND, UAND, Flag, FDepP, cfg.Pred, cfg.Cover, cfg.Lifting, cfg.KnapSol, cfg.MaxCuts, &Cuts, i);
 		//LP.CuttingPlaneHeu(n,m,ur,pr,pmax,nY,Y,nUOR,UOR,nUAND,UAND,Flag,FDepP,cfg.Pred,cfg.Cover,cfg.Lifting,cfg.KnapSol,cfg.MaxCuts,&Cuts,1);
 
 		// Optimize
-		LP.SolveMIP(&zlrt,&Gap,&Nodes,&Cuts);
+		LP.SolveMIP(&zlrt, &Gap, &Nodes, &Cuts);
 
 		(*zlr) += zlrt;
 
 		// Read the solution
-		ptot=0.0;
-		objtot=0.0;
-		if (iprinx>0) printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
+		ptot = 0.0;
+		objtot = 0.0;
+		if (iprinx > 0) printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
 
 		// Variables xj
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			if (LP.xt[j]>0.001)
+			k = i * n + j;
+			if (LP.xt[j] > 0.001)
 			{
 				//Flag[j] = 1;
 				xlr[k] = 1.0;
-				ptot += p[j]*run[j];
+				ptot += p[j] * run[j];
 				objtot += LP.obj[j];
-				if (iprinx>0) printf("%d ",j);
+				if (iprinx > 0) printf("%d ", j);
 			}
 			else
 			{
@@ -2595,17 +2765,17 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 		}
 
 		// Variables yj
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			if (YMap[j]<0)
+			k = i * n + j;
+			if (YMap[j] < 0)
 			{
 				ylr[k] = 0.0;
 				continue;
 			}
 
 			kk = n + YMap[j];
-			if (LP.xt[kk]>0.001)
+			if (LP.xt[kk] > 0.001)
 			{
 				ylr[k] = LP.xt[kk];
 				objtot += LP.obj[kk];
@@ -2616,10 +2786,10 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 		}
 
 		objval += objtot;
-		if (iprinx>0) printf("\n  ptot=%lf    objtot=%lf\n",ptot,objtot);
+		if (iprinx > 0) printf("\n  ptot=%lf    objtot=%lf\n", ptot, objtot);
 	}
 
-	if (iprinx>0) printf("\n  Zheu=%lf\n",(*zlr));
+	if (iprinx > 0) printf("\n  Zheu=%lf\n", (*zlr));
 
 	return 0;
 }
@@ -2629,9 +2799,9 @@ int AgileOpt::SolveLR(double *urpen, double *apen, long nYMap, long *YMap, long 
 // Compute the Lagrangian Problem Solution using Dynamic Programming
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::SolveLRDP(double *urpen, double *apen, long nYMap, long *YMap, long *Flag, double Konst, double *zlr, double *xlr, double *ylr)
+int AgileOpt::SolveLRDP(double* urpen, double* apen, long nYMap, long* YMap, long* Flag, double Konst, double* zlr, double* xlr, double* ylr)
 {
-	long i,j,k,h,j1,kk;
+	long i, j, k, h, j1, kk;
 	long kount;
 	double ptot;
 	double objtot;
@@ -2640,39 +2810,39 @@ int AgileOpt::SolveLRDP(double *urpen, double *apen, long nYMap, long *YMap, lon
 	long maxw;
 	Knapsack KP;
 
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		Flag[j] = 0;
 	}
 
 	maxw = 0;
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
-		if (maxw<(int(pmax[i]*10+0.001)))
-			maxw = int(pmax[i]*10+0.001);
+		if (maxw < (int(pmax[i] * 10 + 0.001)))
+			maxw = int(pmax[i] * 10 + 0.001);
 	}
 
 	// Allocate Knapsack data structures
-	KP.Malloc(n,maxw);
+	KP.Malloc(n, maxw);
 
 	// Initialize the solution value with the constant contribution of the Lagrangian penalties
 	objval = 0.0;
 	(*zlr) = Konst;
 
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		// LP local into the loop body
 		//CplexObj LP;
 
 		// Variables xij
 		KP.n = 0;
-		KP.W = int(pmax[i]*10+0.001);
-		for (j=0; j<n; j++) 
+		KP.W = int(pmax[i] * 10 + 0.001);
+		for (j = 0; j < n; j++)
 		{
-			k = n*i+j;
-			if (urpen[k]>Prec)
+			k = n * i + j;
+			if (urpen[k] > Prec)
 			{
-				KP.w[KP.n] = int(pr[j]*10+0.001);
+				KP.w[KP.n] = int(pr[j] * 10 + 0.001);
 				KP.p[KP.n] = urpen[k];
 				KP.ind[KP.n] = j;
 				KP.n++;
@@ -2683,42 +2853,42 @@ int AgileOpt::SolveLRDP(double *urpen, double *apen, long nYMap, long *YMap, lon
 		zlrt = KP.zopt;
 
 		// Read the solution
-		ptot=0.0;
-		objtot=0.0;
-		if (iprinx>0) printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
-		for (j=0; j<n; j++)
+		ptot = 0.0;
+		objtot = 0.0;
+		if (iprinx > 0) printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			xlr[k] = 0.0;
 		}
-		for (j1=0;j1<KP.n;j1++)
+		for (j1 = 0;j1 < KP.n;j1++)
 		{
 			j = KP.ind[j1];
-			k = i*n+j;
+			k = i * n + j;
 			xlr[k] = KP.x[j1];
-			if (xlr[k]>Prec)
+			if (xlr[k] > Prec)
 			{
-				ptot += p[j]*run[j];
+				ptot += p[j] * run[j];
 				objtot += KP.p[j1];
-				if (iprinx>0) printf("%d ",j);
+				if (iprinx > 0) printf("%d ", j);
 			}
 		}
 
 		// Variables yij
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			ylr[k] = 0.0;
 		}
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			if (nY[j]<2)
+			if (nY[j] < 2)
 				continue;
 
-			k = n*i+j;
-			if (apen[k]>Prec)
+			k = n * i + j;
+			if (apen[k] > Prec)
 			{
-				ylr[k] = (double)(nY[j]-1);
+				ylr[k] = (double)(nY[j] - 1);
 				zlrt += ylr[k] * apen[k];
 				objtot += ylr[k] * apen[k];
 			}
@@ -2728,14 +2898,14 @@ int AgileOpt::SolveLRDP(double *urpen, double *apen, long nYMap, long *YMap, lon
 			}
 		}
 
-		objval += objtot; 
-		if (iprinx>0) printf("\n  ptot=%lf    objtot=%lf\n",ptot,objtot);
+		objval += objtot;
+		if (iprinx > 0) printf("\n  ptot=%lf    objtot=%lf\n", ptot, objtot);
 
 		(*zlr) += zlrt;
 
 	}
 
-	if (iprinx>0) printf("\n  Zheu=%lf\n",(*zlr));
+	if (iprinx > 0) printf("\n  Zheu=%lf\n", (*zlr));
 
 	return 0;
 }
@@ -2745,37 +2915,37 @@ int AgileOpt::SolveLRDP(double *urpen, double *apen, long nYMap, long *YMap, lon
 // Try to move j1 from i1 to i
 //-----------------------------------------------------------------------------
 //
-double AgileOpt::TryMove(double *xheu, double *yheu, long j1, long i1, long i)
+double AgileOpt::TryMove(double* xheu, double* yheu, long j1, long i1, long i)
 {
-	long jj,j2,k1,k2;
+	long jj, j2, k1, k2;
 	long konta;
 	double gain;
 
-	k1 = i1*n+j1;
+	k1 = i1 * n + j1;
 
 	// Gain for moving j1 from i1 to i
-	gain = (double)(i1-i)*ur[j1]; // Saving due to x[k] 
-	if (nY[j1]>1)
+	gain = (double)(i1 - i) * ur[j1]; // Saving due to x[k] 
+	if (nY[j1] > 1)
 	{
 		// Saving due to y[k] 
-		gain -= (double)(m-i1)*yheu[k1]*u[j1]*a[j1]/(nY[j1]-1);
+		gain -= (double)(m - i1) * yheu[k1] * u[j1] * a[j1] / (nY[j1] - 1);
 		konta = 0;
-		for (jj=0; jj<nY[j1]; jj++)
+		for (jj = 0; jj < nY[j1]; jj++)
 		{
 			j2 = Y[j1][jj];
-			if (j2==j1) 
+			if (j2 == j1)
 				continue;
-			k2 = i*n+j2;
-			if (xheu[k2]>0.999)
+			k2 = i * n + j2;
+			if (xheu[k2] > 0.999)
 			{
 				konta++;
-				gain += (double)(m-i)*(+1.)*u[j2]*a[j2]/(nY[j2]-1);
+				gain += (double)(m - i) * (+1.) * u[j2] * a[j2] / (nY[j2] - 1);
 			}
-			k2 = i1*n+j2;
-			if (xheu[k2]>0.999)
-				gain += (double)(m-i1)*(-1.)*u[j2]*a[j2]/(nY[j2]-1); 
+			k2 = i1 * n + j2;
+			if (xheu[k2] > 0.999)
+				gain += (double)(m - i1) * (-1.) * u[j2] * a[j2] / (nY[j2] - 1);
 		}
-		gain += (double)((m-i)*konta)*u[j1]*a[j1]/(nY[j1]-1);
+		gain += (double)((m - i) * konta) * u[j1] * a[j1] / (nY[j1] - 1);
 	}
 
 	return gain;
@@ -2786,36 +2956,36 @@ double AgileOpt::TryMove(double *xheu, double *yheu, long j1, long i1, long i)
 // Try to move j1 from i1 to i
 //-----------------------------------------------------------------------------
 //
-double AgileOpt::Move(double *xheu, double *yheu, long j1, long i1, long i)
+double AgileOpt::Move(double* xheu, double* yheu, long j1, long i1, long i)
 {
-	long jj,j2,k1,k2;
+	long jj, j2, k1, k2;
 	long konta;
 
-	k1 = i1*n+j1;
+	k1 = i1 * n + j1;
 
 	// Moving j1 from i1 to i
 	xheu[k1] = 0.0;
 	yheu[k1] = 0.0;
 	konta = 0;
-	if (nY[j1]>1)
+	if (nY[j1] > 1)
 	{
-		for (jj=0; jj<nY[j1]; jj++)
+		for (jj = 0; jj < nY[j1]; jj++)
 		{
 			j2 = Y[j1][jj];
-			if (j2==j1) 
+			if (j2 == j1)
 				continue;
-			k2 = i*n+j2;
-			if (xheu[k2]>0.999)
+			k2 = i * n + j2;
+			if (xheu[k2] > 0.999)
 			{
 				konta++;
 				yheu[k2] += 1.;
 			}
-			k2 = i1*n+j2;
-			if (xheu[k2]>0.999)
-				yheu[k2] -= 1.; 
+			k2 = i1 * n + j2;
+			if (xheu[k2] > 0.999)
+				yheu[k2] -= 1.;
 		}
 	}
-	k2 = i*n+j1; 
+	k2 = i * n + j1;
 	xheu[k2] = 1.0;
 	yheu[k2] = (double)konta;
 
@@ -2827,18 +2997,18 @@ double AgileOpt::Move(double *xheu, double *yheu, long j1, long i1, long i)
 // Improve a heuristic solutions by swaping user stories
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::HeuSwaps(double *zheu, double *xheu, double *yheu)
+int AgileOpt::HeuSwaps(double* zheu, double* xheu, double* yheu)
 {
-	long i,j,k;
-	long i1,j1,k1;
-	long jj,j2,k2;
+	long i, j, k;
+	long i1, j1, k1;
+	long jj, j2, k2;
 	long konta;
 	long konta1;
 	double zold;
-	double ptot,ptot1;
+	double ptot, ptot1;
 	double gain;
 	double zheuf;
-	int status,bolf;
+	int status, bolf;
 	int bol;
 
 	zold = *zheu;
@@ -2848,23 +3018,23 @@ TryAgain:
 	bol = 0;
 
 	// Swaps 1-0
-	for (i=0; i<m-1; i++)
+	for (i = 0; i < m - 1; i++)
 	{
 		ptot = 0.0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			if (xheu[k]>0.999)
+			k = i * n + j;
+			if (xheu[k] > 0.999)
 				ptot += pr[j];
 		}
-		for (i1=i+1; i1<m; i1++)
+		for (i1 = i + 1; i1 < m; i1++)
 		{
-			for (j1=0; j1<n; j1++)
+			for (j1 = 0; j1 < n; j1++)
 			{
-				k1 = i1*n+j1;
-				if (xheu[k1]>0.999)
+				k1 = i1 * n + j1;
+				if (xheu[k1] > 0.999)
 				{
-					if ((ptot+pr[j1])<pmax[i]+Prec)  // Can j1 be anticipated?
+					if ((ptot + pr[j1]) < pmax[i] + Prec)  // Can j1 be anticipated?
 					{
 						// Check if the objective fuction increase!
 						//gain = TryMove(xheu,yheu,j1,i1,i);
@@ -2872,16 +3042,16 @@ TryAgain:
 						//if (gain>Prec)
 						//{
 						ptot += pr[j1];
-						Move(xheu,yheu,j1,i1,i);
+						Move(xheu, yheu, j1, i1, i);
 
 						// Check feasibility
-						status = Feasibility(xheu,yheu,&zheuf,&bolf);
-						gain = zheuf-(*zheu); 
-						if ((status)||(gain<Prec))
+						status = Feasibility(xheu, yheu, &zheuf, &bolf);
+						gain = zheuf - (*zheu);
+						if ((status) || (gain < Prec))
 						{
 							// Backtracking
 							ptot += -pr[j1];
-							Move(xheu,yheu,j1,i,i1);
+							Move(xheu, yheu, j1, i, i1);
 						}
 						else
 						{
@@ -2894,49 +3064,49 @@ TryAgain:
 					}
 				}
 
-Next0:;
+			Next0:;
 
 			}
 		}
 	}
 
 	// Swaps 1-1
-	for (i=0; i<m-1; i++)
+	for (i = 0; i < m - 1; i++)
 	{
 		ptot = 0.0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			if (xheu[k]>0.999)
+			k = i * n + j;
+			if (xheu[k] > 0.999)
 				ptot += pr[j];
 		}
 
-		for (i1=i+1; i1<m; i1++)
+		for (i1 = i + 1; i1 < m; i1++)
 		{
 			ptot1 = 0.0;
-			for (j1=0; j1<n; j1++)
+			for (j1 = 0; j1 < n; j1++)
 			{
-				k1 = i1*n+j1;
-				if (xheu[k1]>0.999)
+				k1 = i1 * n + j1;
+				if (xheu[k1] > 0.999)
 					ptot1 += pr[j1];
 			}
 
-			for (j=0; j<n; j++)
+			for (j = 0; j < n; j++)
 			{
-				k = i*n+j;
-				if (xheu[k]<0.999)
+				k = i * n + j;
+				if (xheu[k] < 0.999)
 					continue;
 
-				for (j1=0; j1<n; j1++)
+				for (j1 = 0; j1 < n; j1++)
 				{
-					if (j==j1)
+					if (j == j1)
 						continue;
 
-					k1 = i1*n+j1;
-					if (xheu[k1]>0.999)
-					{ 
+					k1 = i1 * n + j1;
+					if (xheu[k1] > 0.999)
+					{
 						// Can j and j1 be swapped?
-						if (((ptot-pr[j]+pr[j1])<pmax[i]+Prec)&&((ptot1+pr[j]-pr[j1])<pmax[i]+Prec)) 
+						if (((ptot - pr[j] + pr[j1]) < pmax[i] + Prec) && ((ptot1 + pr[j] - pr[j1]) < pmax[i] + Prec))
 						{
 							// Check if the objective fuction increase!
 
@@ -2949,23 +3119,23 @@ Next0:;
 							//gain=1.;
 							//if (gain>Prec)
 							//{
-							ptot += pr[j1]-pr[j];
-							ptot1 += pr[j]-pr[j1];
+							ptot += pr[j1] - pr[j];
+							ptot1 += pr[j] - pr[j1];
 
-							Move(xheu,yheu,j1,i1,i);
-							Move(xheu,yheu,j,i,i1);
+							Move(xheu, yheu, j1, i1, i);
+							Move(xheu, yheu, j, i, i1);
 
 							// Check feasibility
-							status = Feasibility(xheu,yheu,&zheuf,&bolf);
-							gain = zheuf-(*zheu); 
-							if ((status)||(gain<Prec))
+							status = Feasibility(xheu, yheu, &zheuf, &bolf);
+							gain = zheuf - (*zheu);
+							if ((status) || (gain < Prec))
 							{
 								// Backtracking
-								ptot += pr[j]-pr[j1];
-								ptot1 += pr[j1]-pr[j];
+								ptot += pr[j] - pr[j1];
+								ptot1 += pr[j1] - pr[j];
 
-								Move(xheu,yheu,j1,i,i1);
-								Move(xheu,yheu,j,i1,i);
+								Move(xheu, yheu, j1, i, i1);
+								Move(xheu, yheu, j, i1, i);
 							}
 							else
 							{
@@ -2978,7 +3148,7 @@ Next0:;
 						}
 					}
 				}
-Next1:;
+			Next1:;
 
 			}
 		}
@@ -2987,48 +3157,48 @@ Next1:;
 	//goto END;
 
 	// Swaps 2-1
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		ptot = 0.0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			if (xheu[k]>0.999)
+			k = i * n + j;
+			if (xheu[k] > 0.999)
 				ptot += pr[j];
 		}
 
-		for (i1=0; i1<m; i1++)
+		for (i1 = 0; i1 < m; i1++)
 		{
-			if (i==i1)
+			if (i == i1)
 				continue;
 
 			ptot1 = 0.0;
-			for (j1=0; j1<n; j1++)
+			for (j1 = 0; j1 < n; j1++)
 			{
-				k1 = i1*n+j1;
-				if (xheu[k1]>0.999)
+				k1 = i1 * n + j1;
+				if (xheu[k1] > 0.999)
 					ptot1 += pr[j1];
 			}
 
-			for (j=0; j<n-1; j++)
+			for (j = 0; j < n - 1; j++)
 			{
-				k = i*n+j;
-				if (xheu[k]<0.999)
+				k = i * n + j;
+				if (xheu[k] < 0.999)
 					continue;
 
-				for (j1=j+1; j1<n; j1++)
+				for (j1 = j + 1; j1 < n; j1++)
 				{
-					k1 = i*n+j1;
-					if (xheu[k1]<0.999)
+					k1 = i * n + j1;
+					if (xheu[k1] < 0.999)
 						continue;
 
-					for (j2=0; j2<n; j2++)
+					for (j2 = 0; j2 < n; j2++)
 					{
-						k2 = i1*n+j2;
-						if (xheu[k2]>0.999)
-						{ 
+						k2 = i1 * n + j2;
+						if (xheu[k2] > 0.999)
+						{
 							// Can (j and j1) be swapped with j2?
-							if (((ptot-pr[j]-pr[j1]+pr[j2])<pmax[i]+Prec)&&((ptot1+pr[j]+pr[j1]-pr[j2])<pmax[i]+Prec)) 
+							if (((ptot - pr[j] - pr[j1] + pr[j2]) < pmax[i] + Prec) && ((ptot1 + pr[j] + pr[j1] - pr[j2]) < pmax[i] + Prec))
 							{
 								// Check if the objective fuction increase!
 
@@ -3043,25 +3213,25 @@ Next1:;
 
 								//if (gain>Prec)
 								//{
-								ptot += pr[j2]-pr[j]-pr[j1];
-								ptot1 += pr[j]+pr[j1]-pr[j2];
+								ptot += pr[j2] - pr[j] - pr[j1];
+								ptot1 += pr[j] + pr[j1] - pr[j2];
 
-								Move(xheu,yheu,j2,i1,i);
-								Move(xheu,yheu,j1,i,i1);
-								Move(xheu,yheu,j,i,i1);
+								Move(xheu, yheu, j2, i1, i);
+								Move(xheu, yheu, j1, i, i1);
+								Move(xheu, yheu, j, i, i1);
 
 								// Check feasibility
-								status = Feasibility(xheu,yheu,&zheuf,&bolf);
-								gain = zheuf-(*zheu); 
-								if ((status)||(gain<Prec))
+								status = Feasibility(xheu, yheu, &zheuf, &bolf);
+								gain = zheuf - (*zheu);
+								if ((status) || (gain < Prec))
 								{
 									// Backtracking
-									ptot += pr[j]+pr[j1]-pr[j2];
-									ptot1 += pr[j2]-pr[j]-pr[j1];
+									ptot += pr[j] + pr[j1] - pr[j2];
+									ptot1 += pr[j2] - pr[j] - pr[j1];
 
-									Move(xheu,yheu,j2,i,i1);
-									Move(xheu,yheu,j1,i1,i);
-									Move(xheu,yheu,j,i1,i);
+									Move(xheu, yheu, j2, i, i1);
+									Move(xheu, yheu, j1, i1, i);
+									Move(xheu, yheu, j, i1, i);
 								}
 								else
 								{
@@ -3076,7 +3246,7 @@ Next1:;
 					}
 				}
 
-Next2:;
+			Next2:;
 
 			}
 		}
@@ -3088,19 +3258,19 @@ Next2:;
 END:
 
 	// Check feasibility
-	status = Feasibility(xheu,yheu,&zheuf,&bolf);
+	status = Feasibility(xheu, yheu, &zheuf, &bolf);
 	if (status)
 	{
 		//printf("ERROR...  HeuSwaps solution not feasible: status=%d\n",status);
 		//fprintf(ferr,"ERROR...  HeuSwaps solution not feasible: status=%d\n",status);
-		*zheu=-Inf;
+		*zheu = -Inf;
 		// exit(status);
 	}
-	else if (((*zheu)>zheuf+LPrec)||((*zheu)<zheuf-LPrec))
+	else if (((*zheu) > zheuf + LPrec) || ((*zheu) < zheuf - LPrec))
 	{
 		//printf("ERROR...  HeuSwaps value: zheu=%lf  zheut=%lf\n",*zheu,zheuf);
 		//fprintf(ferr,"ERROR...  HeuSwaps value: zheu=%lf  zheut=%lf\n",*zheu,zheuf);
-		*zheu=-Inf;
+		*zheu = -Inf;
 		// exit(status);
 	}
 
@@ -3112,86 +3282,86 @@ END:
 // Improve a heuristic solutions by swaping user stories
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::HeuSwapsOld(double *zheu, double *xheu, double *yheu)
+int AgileOpt::HeuSwapsOld(double* zheu, double* xheu, double* yheu)
 {
-	long i,j,k;
-	long i1,j1,k1;
-	long jj,j2,k2;
+	long i, j, k;
+	long i1, j1, k1;
+	long jj, j2, k2;
 	long konta;
 	long konta1;
 	double zold;
-	double ptot,ptot1;
+	double ptot, ptot1;
 	double gain;
 	double zheuf;
-	int status,bolf;
+	int status, bolf;
 
 	zold = *zheu;
 
 	// Swaps 1-0
-	for (i=0; i<m-1; i++)
+	for (i = 0; i < m - 1; i++)
 	{
 		ptot = 0.0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			if (xheu[k]>0.999)
+			k = i * n + j;
+			if (xheu[k] > 0.999)
 				ptot += pr[j];
 		}
-		for (i1=i+1; i1<m; i1++)
+		for (i1 = i + 1; i1 < m; i1++)
 		{
-			for (j1=0; j1<n; j1++)
+			for (j1 = 0; j1 < n; j1++)
 			{
-				k1 = i1*n+j1;
-				if (xheu[k1]>0.999)
+				k1 = i1 * n + j1;
+				if (xheu[k1] > 0.999)
 				{
-					if ((ptot+pr[j1])<pmax[i]+Prec)  // Can j1 be anticipated?
+					if ((ptot + pr[j1]) < pmax[i] + Prec)  // Can j1 be anticipated?
 					{
 						// Check if the objective fuction increase!
-						gain = (double)(i1-i)*ur[j1]; // Saving due to x[k] 
-						if (nY[j1]>1)
+						gain = (double)(i1 - i) * ur[j1]; // Saving due to x[k] 
+						if (nY[j1] > 1)
 						{
 							// Saving due to y[k] 
-							gain -= (double)(m-i1)*yheu[k1]*u[j1]*a[j1]/(nY[j1]-1);
+							gain -= (double)(m - i1) * yheu[k1] * u[j1] * a[j1] / (nY[j1] - 1);
 							konta = 0;
-							for (jj=0; jj<nY[j1]; jj++)
+							for (jj = 0; jj < nY[j1]; jj++)
 							{
 								j = Y[j1][jj];
-								if (j==j1) 
+								if (j == j1)
 									continue;
-								k = i*n+j;
-								if (xheu[k]>0.999)
+								k = i * n + j;
+								if (xheu[k] > 0.999)
 								{
 									konta++;
-									gain += (double)(m-i)*(+1.)*u[j]*a[j]/(nY[j]-1);
+									gain += (double)(m - i) * (+1.) * u[j] * a[j] / (nY[j] - 1);
 								}
-								k = i1*n+j;
-								if (xheu[k]>0.999)
-									gain += (double)(m-i1)*(-1.)*u[j]*a[j]/(nY[j]-1); 
+								k = i1 * n + j;
+								if (xheu[k] > 0.999)
+									gain += (double)(m - i1) * (-1.) * u[j] * a[j] / (nY[j] - 1);
 							}
-							gain += (double)((m-i)*konta)*u[j1]*a[j1]/(nY[j1]-1);
+							gain += (double)((m - i) * konta) * u[j1] * a[j1] / (nY[j1] - 1);
 						}
-						if (gain>Prec)
+						if (gain > Prec)
 						{
 							(*zheu) += gain;
 							ptot += pr[j1];
 							xheu[k1] = 0.0;
 							yheu[k1] = 0.0;
-							k = i*n+j1; 
+							k = i * n + j1;
 							xheu[k] = 1.0;
 							yheu[k] = (double)konta;
-							if (nY[j1]>1)
+							if (nY[j1] > 1)
 							{
-								for (jj=0; jj<nY[j1]; jj++)
+								for (jj = 0; jj < nY[j1]; jj++)
 								{
 									j = Y[j1][jj];
-									if (j==j1) 
+									if (j == j1)
 										continue;
-									k = i*n+j;
-									if (xheu[k]>0.999)
+									k = i * n + j;
+									if (xheu[k] > 0.999)
 										yheu[k] += 1.;
-									k = i1*n+j;
-									if (xheu[k]>0.999)
-										yheu[k] -= 1.; 
+									k = i1 * n + j;
+									if (xheu[k] > 0.999)
+										yheu[k] -= 1.;
 								}
 							}
 						}
@@ -3202,138 +3372,138 @@ int AgileOpt::HeuSwapsOld(double *zheu, double *xheu, double *yheu)
 	}
 
 	// Swaps 1-1
-	for (i=0; i<m-1; i++)
+	for (i = 0; i < m - 1; i++)
 	{
 		ptot = 0.0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			if (xheu[k]>0.999)
+			k = i * n + j;
+			if (xheu[k] > 0.999)
 				ptot += pr[j];
 		}
 
-		for (i1=i+1; i1<m; i1++)
+		for (i1 = i + 1; i1 < m; i1++)
 		{
 			ptot1 = 0.0;
-			for (j1=0; j1<n; j1++)
+			for (j1 = 0; j1 < n; j1++)
 			{
-				k1 = i1*n+j1;
-				if (xheu[k1]>0.999)
+				k1 = i1 * n + j1;
+				if (xheu[k1] > 0.999)
 					ptot1 += pr[j1];
 			}
 
-			for (j=0; j<n-1; j++)
+			for (j = 0; j < n - 1; j++)
 			{
-				k = i*n+j;
-				if (xheu[k]<0.999)
+				k = i * n + j;
+				if (xheu[k] < 0.999)
 					continue;
 
-				for (j1=j+1; j1<n; j1++)
+				for (j1 = j + 1; j1 < n; j1++)
 				{
-					k1 = i1*n+j1;
-					if (xheu[k1]>0.999)
-					{ 
+					k1 = i1 * n + j1;
+					if (xheu[k1] > 0.999)
+					{
 						// Can j and j1 be swapped?
-						if (((ptot-pr[j]+pr[j1])<pmax[i]+Prec)&&((ptot1+pr[j]-pr[j1])<pmax[i]+Prec)) 
+						if (((ptot - pr[j] + pr[j1]) < pmax[i] + Prec) && ((ptot1 + pr[j] - pr[j1]) < pmax[i] + Prec))
 						{
 							// Check if the objective fuction increase!
 
 							// Gain for moving j1 from i1 to i
-							gain = (double)(i1-i)*ur[j1]; // Saving due to x[k] 
-							if (nY[j1]>1)
+							gain = (double)(i1 - i) * ur[j1]; // Saving due to x[k] 
+							if (nY[j1] > 1)
 							{
 								// Saving due to y[k] 
-								gain -= (double)(m-i1)*yheu[k1]*u[j1]*a[j1]/(nY[j1]-1);
+								gain -= (double)(m - i1) * yheu[k1] * u[j1] * a[j1] / (nY[j1] - 1);
 								konta1 = 0;
-								for (jj=0; jj<nY[j1]; jj++)
+								for (jj = 0; jj < nY[j1]; jj++)
 								{
 									j2 = Y[j1][jj];
-									if (j2==j1) 
+									if (j2 == j1)
 										continue;
-									k2 = i*n+j2;
-									if (xheu[k2]>0.999)
+									k2 = i * n + j2;
+									if (xheu[k2] > 0.999)
 									{
 										konta1++;
-										gain += (double)(m-i)*(+1.)*u[j2]*a[j2]/(nY[j2]-1);
+										gain += (double)(m - i) * (+1.) * u[j2] * a[j2] / (nY[j2] - 1);
 									}
-									k2 = i1*n+j2;
-									if (xheu[k2]>0.999)
-										gain += (double)(m-i1)*(-1.)*u[j2]*a[j2]/(nY[j2]-1); 
+									k2 = i1 * n + j2;
+									if (xheu[k2] > 0.999)
+										gain += (double)(m - i1) * (-1.) * u[j2] * a[j2] / (nY[j2] - 1);
 								}
-								gain += (double)((m-i)*konta1)*u[j1]*a[j1]/(nY[j1]-1);
+								gain += (double)((m - i) * konta1) * u[j1] * a[j1] / (nY[j1] - 1);
 							}
 
 							// Gain for moving j from i to i1
-							gain -= (double)(i1-i)*ur[j]; // Saving due to x[k] 
-							if (nY[j]>1)
+							gain -= (double)(i1 - i) * ur[j]; // Saving due to x[k] 
+							if (nY[j] > 1)
 							{
 								// Saving due to y[k] 
-								gain -= (double)(m-i)*yheu[k]*u[j]*a[j]/(nY[j]-1);
+								gain -= (double)(m - i) * yheu[k] * u[j] * a[j] / (nY[j] - 1);
 								konta = 0;
-								for (jj=0; jj<nY[j]; jj++)
+								for (jj = 0; jj < nY[j]; jj++)
 								{
 									j2 = Y[j][jj];
-									if (j2==j) 
+									if (j2 == j)
 										continue;
-									k2 = i1*n+j2;
-									if (xheu[k2]>0.999)
+									k2 = i1 * n + j2;
+									if (xheu[k2] > 0.999)
 									{
 										konta++;
-										gain += (double)(m-i1)*(+1.)*u[j2]*a[j2]/(nY[j2]-1);
+										gain += (double)(m - i1) * (+1.) * u[j2] * a[j2] / (nY[j2] - 1);
 									}
-									k2 = i*n+j2;
-									if (xheu[k2]>0.999)
-										gain += (double)(m-i)*(-1.)*u[j2]*a[j2]/(nY[j2]-1); 
+									k2 = i * n + j2;
+									if (xheu[k2] > 0.999)
+										gain += (double)(m - i) * (-1.) * u[j2] * a[j2] / (nY[j2] - 1);
 								}
-								gain += (double)((m-i1)*konta)*u[j]*a[j]/(nY[j]-1);
+								gain += (double)((m - i1) * konta) * u[j] * a[j] / (nY[j] - 1);
 							}
-							if (gain>Prec)
+							if (gain > Prec)
 							{
 								(*zheu) += gain;
-								ptot += pr[j1]-pr[j];
-								ptot1 += pr[j]-pr[j1];
+								ptot += pr[j1] - pr[j];
+								ptot1 += pr[j] - pr[j1];
 
 								// Moving j1 from i1 to i
 								xheu[k1] = 0.0;
 								yheu[k1] = 0.0;
-								k2 = i*n+j1; 
+								k2 = i * n + j1;
 								xheu[k2] = 1.0;
 								yheu[k2] = (double)konta1;
-								if (nY[j1]>1)
+								if (nY[j1] > 1)
 								{
-									for (jj=0; jj<nY[j1]; jj++)
+									for (jj = 0; jj < nY[j1]; jj++)
 									{
 										j2 = Y[j1][jj];
-										if (j2==j1) 
+										if (j2 == j1)
 											continue;
-										k2 = i*n+j2;
-										if (xheu[k2]>0.999)
+										k2 = i * n + j2;
+										if (xheu[k2] > 0.999)
 											yheu[k2] += 1.;
-										k2 = i1*n+j2;
-										if (xheu[k2]>0.999)
-											yheu[k2] -= 1.; 
+										k2 = i1 * n + j2;
+										if (xheu[k2] > 0.999)
+											yheu[k2] -= 1.;
 									}
 								}
 
 								// Moving j from i to i1
 								xheu[k] = 0.0;
 								yheu[k] = 0.0;
-								k2 = i1*n+j; 
+								k2 = i1 * n + j;
 								xheu[k2] = 1.0;
 								yheu[k2] = (double)konta;
-								if (nY[j]>1)
+								if (nY[j] > 1)
 								{
-									for (jj=0; jj<nY[j]; jj++)
+									for (jj = 0; jj < nY[j]; jj++)
 									{
 										j2 = Y[j][jj];
-										if (j2==j) 
+										if (j2 == j)
 											continue;
-										k2 = i1*n+j2;
-										if (xheu[k2]>0.999)
+										k2 = i1 * n + j2;
+										if (xheu[k2] > 0.999)
 											yheu[k2] += 1.;
-										k2 = i*n+j2;
-										if (xheu[k2]>0.999)
-											yheu[k2] -= 1.; 
+										k2 = i * n + j2;
+										if (xheu[k2] > 0.999)
+											yheu[k2] -= 1.;
 									}
 								}
 							}
@@ -3345,17 +3515,17 @@ int AgileOpt::HeuSwapsOld(double *zheu, double *xheu, double *yheu)
 	}
 
 	// Check feasibility
-	status = Feasibility(xheu,yheu,&zheuf,&bolf);
+	status = Feasibility(xheu, yheu, &zheuf, &bolf);
 	if (status)
 	{
-		printf("ERROR...  HeuSwaps solution not feasible: status=%d\n",status);
-		fprintf(ferr,"ERROR...  HeuSwaps solution not feasible: status=%d\n",status);
+		printf("ERROR...  HeuSwaps solution not feasible: status=%d\n", status);
+		fprintf(ferr, "ERROR...  HeuSwaps solution not feasible: status=%d\n", status);
 		//exit(status);
 	}
-	else if (((*zheu)>zheuf+LPrec)||((*zheu)<zheuf-LPrec))
+	else if (((*zheu) > zheuf + LPrec) || ((*zheu) < zheuf - LPrec))
 	{
-		printf("ERROR...  HeuSwaps value: zheu=%lf  zheut=%lf\n",*zheu,zheuf);
-		fprintf(ferr,"ERROR...  HeuSwaps value: zheu=%lf  zheut=%lf\n",*zheu,zheuf);
+		printf("ERROR...  HeuSwaps value: zheu=%lf  zheut=%lf\n", *zheu, zheuf);
+		fprintf(ferr, "ERROR...  HeuSwaps value: zheu=%lf  zheut=%lf\n", *zheu, zheuf);
 		//exit(status);
 	}
 
@@ -3367,309 +3537,270 @@ int AgileOpt::HeuSwapsOld(double *zheu, double *xheu, double *yheu)
 // Compute an feasible solution using a Lagrangian Heuristic
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::LagrHeu(double *urpen, double *apen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheu, double *yheu)
+int AgileOpt::LagrHeu(
+    double* urpen,
+    double* apen,
+    long nYMap,
+    long* YMap,
+    long* Flag,
+    double* zheu,
+    double* xheu,
+    double* yheu,
+    int select_method)
 {
-	long i,j,k,h,j1,kk,k1;
-	long kount;
-	double ptot;
-	double objtot;
-	double objval;
-	double zheut;
-	double zheuf;
-	double minur;
-	double mina;
-	int status,bolf;
+    long i, j, k, h, j1, kk, k1;
+    long kount;
+    double ptot;
+    double objval;
+    double zheut;
+    double zheuf;
+    double minur;
+    double mina;
+    int status, bolf;
 
-	for (j=0; j<n; j++)
-	{
-		Flag[j] = 0;
-	}
+    for (j = 0; j < n; j++)
+        Flag[j] = 0;
 
-	// Setup the initial heuristic solution value  
-	(*zheu) = 0.0;
-	objval = 0.0;
+    (*zheu) = 0.0;
+    objval = 0.0;
 
-	for (i=0; i<m; i++)
-	{
-		// LP local into the loop body
-		CplexObj LP;
+    /* ===============================
+       SPRINT LOOP
+       =============================== */
+    for (i = 0; i < m; i++)
+    {
+        CplexObj LP;
 
-		// Set problem size
-		LP.ncols = n+nYMap;
-		LP.nrows = 1 + 2*nYMap;  // OR/AND constraints are added later
-		LP.nz = (n)*(2+n) + (nYMap)*(1+n);  // We overestimate |Yj|=n
-		if (cfg.Sentinel)
-		{
-			LP.ncols += 1;
-			LP.nrows += 1;
-			LP.nz += n+1;
-		}
-		LP.MallocCols();
+        /* -----------------------------
+           Objective coefficient lambda
+           ----------------------------- */
+        auto ObjCoeff = [&](long i, long j) -> double
+        {
+            int depsReady = 0;
+            double ratio = 0.0;
 
-		// Compute min urpen, in order to avoid negative price
-		minur=0.0;
-		mina=0.0;
-		for (j=0; j<n; j++)
-		{
-			kk = i*n+j;
-			if (minur > urpen[kk])
-				minur = urpen[kk];
-			if (mina > apen[kk])
-				mina = apen[kk];
-		}
+            if (nY[j] == 0) ratio = 1.0;
+            else {
+                for (h = 0; h < nY[j]; h++)
+                    if (Flag[Y[j][h]] == 1)
+                        depsReady++;
+                ratio = (double)depsReady / nY[j];
+            }
 
-		// Load Columns/Variables xj in the Cplex data structure
-		k = 0;
-		kount = 0;
-		for (j=0; j<n; j++)
-		{
-			kk = i*n+j;
-			//LP.obj[k] = (m-i)*urpen[k];
-			LP.obj[k] = urpen[kk]-minur+10.;
+            double depPenalty = 0.25 + 0.75 * ratio;
 
-			LP.matbeg[k] = kount;
+            int unlocks = 0;
+            for (kk = 0; kk < n; kk++)
+                for (h = 0; h < nY[kk]; h++)
+                    if (Y[kk][h] == j)
+                        unlocks++;
 
-			// Knapsack Constraint
-			LP.matind[kount] = 0;
-			// LP.matval[kount] = p[j]*run[j]; // or pr[j]
-			LP.matval[kount] = pr[j];
-			kount++;
+            double unlockBonus = 0.5 * unlocks;
+            double base = (original_m - i);
 
-			// Linking Constraints xj and yj
-			for (h=0; h<nY[j]; h++)
-			{
-				j1 = Y[j][h];
-				if ((YMap[j1]>=0)&&(j1!=j))
-				{
-					LP.matind[kount] = 1+YMap[j1];
-					LP.matval[kount] = -1.;
-					kount++;
-				}
-			}
+            switch (select_method)
+            {
+            case 1: return base * u[j] * rcr[j];
+            case 2: return base * u[j] * rcr[j] * depPenalty + unlockBonus;
+            case 3: return base * u[j] * run[j];
+            case 4: return base * u[j] * run[j] * depPenalty + unlockBonus;
+            case 5: return base * p[j];
+            case 6: return base * p[j] * depPenalty + unlockBonus;
+            default: return base * u[j] * rcr[j];
+            }
+        };
 
-			if (YMap[j]>=0)
-			{
-				LP.matind[kount] = 1+nYMap+YMap[j];
-				LP.matval[kount] = -(double)(nY[j]-1);
-				kount++;
-			}
+        /* -----------------------------
+           LP dimensions
+           ----------------------------- */
+        LP.ncols = n + nYMap;
+        LP.nrows = 1 + 2 * nYMap;
+        LP.nz = (n) * (2 + n) + (nYMap) * (1 + n);
 
-			// Sentinel Constraint
-			if (cfg.Sentinel)
-			{
-				LP.matind[kount] = 1 + 2*nYMap;
-				LP.matval[kount] = 1.0;
-				kount++;
-			}
+        if (cfg.Sentinel)
+        {
+            LP.ncols++;
+            LP.nrows++;
+            LP.nz += n + 1;
+        }
 
-			LP.matcnt[k] = kount - LP.matbeg[k];
+        LP.MallocCols();
 
-			LP.indices[k] = k;
-			LP.priority[k] = 0;  // prima 1
-			LP.direction[k] = CPX_BRANCH_GLOBAL;
-			//LP.direction[k] = CPX_BRANCH_DOWN;
-			LP.xctype[k] = 'B';
+        /* -----------------------------
+           Avoid negative reduced costs
+           ----------------------------- */
+        minur = 0.0;
+        mina = 0.0;
+        for (j = 0; j < n; j++)
+        {
+            kk = i * n + j;
+            if (minur > urpen[kk]) minur = urpen[kk];
+            if (mina > apen[kk]) mina = apen[kk];
+        }
 
-			LP.lb[k] = 0.0;
-			if (Flag[j]==0)
-				LP.ub[k] = 1.0;
-			else
-				LP.ub[k] = 0.0;
-			k++;
-		}
+        /* ===============================
+           x-variables
+           =============================== */
+        k = 0;
+        kount = 0;
+        for (j = 0; j < n; j++)
+        {
+            kk = i * n + j;
+            LP.obj[k] = urpen[kk] - minur + 10.0;
 
-		// Load Columns/Variables yij in the Cplex data structure
-		kk = 0;
-		for (j=0; j<n; j++)
-		{
-			if (YMap[kk]<0)
-			{
-				kk++;
-				continue;
-			}
+            LP.matbeg[k] = kount;
 
-			k1 = i*n+j;
-			if (nY[j]<2)
-				LP.obj[k] = 0.0;
-			else
-				LP.obj[k] = apen[k1]-mina+10.;
-				//LP.obj[k] = (m-i)*u[j]*a[j]/(nY[j]-1);
-				// LP.obj[k] = a[j]/(nY[j]-1);
+            LP.matind[kount] = 0;
+            LP.matval[kount++] = pr[j];
 
-			LP.matbeg[k] = kount;
+            for (h = 0; h < nY[j]; h++)
+            {
+                j1 = Y[j][h];
+                if (YMap[j1] >= 0 && j1 != j)
+                {
+                    LP.matind[kount] = 1 + YMap[j1];
+                    LP.matval[kount++] = -1.0;
+                }
+            }
 
-			LP.matind[kount] = 1+YMap[kk];
-			LP.matval[kount] = +1.0;
-			kount++;
+            if (YMap[j] >= 0)
+            {
+                LP.matind[kount] = 1 + nYMap + YMap[j];
+                LP.matval[kount++] = -(double)(nY[j] - 1);
+            }
 
-			LP.matind[kount] = 1+nYMap+YMap[kk];
-			LP.matval[kount] = +1.0;
-			kount++;
+            if (cfg.Sentinel)
+            {
+                LP.matind[kount] = 1 + 2 * nYMap;
+                LP.matval[kount++] = 1.0;
+            }
 
-			LP.matcnt[k] = kount - LP.matbeg[k];
+            LP.matcnt[k] = kount - LP.matbeg[k];
+            LP.indices[k] = k;
+            LP.priority[k] = 0;
+            LP.direction[k] = CPX_BRANCH_GLOBAL;
+            LP.xctype[k] = 'B';
+            LP.lb[k] = 0.0;
+            LP.ub[k] = (Flag[j] == 0) ? 1.0 : 0.0;
+            k++;
+        }
 
-			LP.indices[k] = k;
-			LP.priority[k] = 0; // Prima 0
-			LP.direction[k] = CPX_BRANCH_GLOBAL;
-			LP.xctype[k] = 'C';
-			//LP.xctype[k] = 'I';
+        /* ===============================
+           y-variables (linking only)
+           =============================== */
+        kk = 0;
+        for (j = 0; j < n; j++)
+        {
+            if (YMap[j] < 0) continue;
 
-			LP.lb[k] = 0.0;
-			LP.ub[k] = (double)n;
-			k++;
-			kk++;
-		}
+            k1 = i * n + j;
+            LP.obj[k] = (nY[j] < 2) ? 0.0 : apen[k1] - mina + 10.0;
 
-		if (cfg.Sentinel)
-		{
-			// Load Columns/Variables related to Sentinel constraints in the Cplex data structure
-			kk = 0;
+            LP.matbeg[k] = kount;
+            LP.matind[kount] = 1 + YMap[j];
+            LP.matval[kount++] = 1.0;
+            LP.matind[kount] = 1 + nYMap + YMap[j];
+            LP.matval[kount++] = 1.0;
 
-			LP.obj[k] = 0.0;
+            LP.matcnt[k] = kount - LP.matbeg[k];
+            LP.indices[k] = k;
+            LP.priority[k] = 0;
+            LP.direction[k] = CPX_BRANCH_GLOBAL;
+            LP.xctype[k] = 'C';
+            LP.lb[k] = 0.0;
+            LP.ub[k] = (double)n;
+            k++;
+        }
 
-			LP.matbeg[k] = kount;
+        LP.matbeg[k] = kount;
 
-			LP.matind[kount] = m + n + 2*nYMap;
-			LP.matval[kount] = -1.0;
-			kount++;
+        /* ===============================
+           Constraints
+           =============================== */
+        kount = 0;
+        LP.rhs[kount] = pmax[i];
+        LP.sense[kount++] = 'L';
 
-			LP.matcnt[k] = kount - LP.matbeg[k];
+        for (k = 0; k < 2 * nYMap; k++)
+        {
+            LP.rhs[kount] = 0.0;
+            LP.sense[kount++] = 'L';
+        }
 
-			LP.indices[k] = k;
-			LP.priority[k] = 1000; // Prima 0
-			LP.direction[k] = CPX_BRANCH_GLOBAL;
-			//LP.direction[k] = CPX_BRANCH_DOWN;
-			LP.xctype[k] = 'I';
+        if (cfg.Sentinel)
+        {
+            LP.rhs[kount] = 0.0;
+            LP.sense[kount++] = 'E';
+        }
 
-			LP.lb[k] = 0.0;
-			LP.ub[k] = (double)n;
-			k++;
-			kk++;
-		}
+        LP.minmax = -1;
+        LP.CopyLP();
+        LP.SetMIP(cfg.TimeLimit);
 
-		LP.matbeg[k]=kount;
+        LP.CuttingPlaneHeu(
+            n, m, ur, pr, pmax,
+            nY, Y, nUOR, UOR, nUAND, UAND,
+            Flag, FDepP,
+            cfg.Pred, cfg.Cover, cfg.Lifting,
+            cfg.KnapSol, cfg.MaxCuts,
+            &Cuts, 0);
 
-		// Load Constraints in the Cplex data structure
-		kount=0;
-		LP.rhs[kount]=pmax[i];
-		LP.sense[kount]='L';
-		kount++;
+        LP.SolveMIP(&zheut, &Gap, &Nodes, &Cuts);
 
-		for (k=0; k<nYMap; k++)
-		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='L';
-			kount++;
-		}
+        /* ===============================
+           Read solution + recompute Zheu
+           =============================== */
+        ptot = 0.0;
+        for (j = 0; j < n; j++)
+        {
+            k = i * n + j;
+            if (LP.xt[j] > 0.001)
+            {
+                xheu[k] = 1.0;
+                Flag[j] = 1;
+                (*zheu) += ObjCoeff(i, j);
+                ptot += p[j] * run[j];
+            }
+            else
+                xheu[k] = 0.0;
+        }
 
-		for (k=0; k<nYMap; k++)
-		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='L';
-			kount++;
-		}
+        for (j = 0; j < n; j++)
+        {
+            k = i * n + j;
+            yheu[k] = 0.0;
+            if (YMap[j] < 0) continue;
 
-		if (cfg.Sentinel)
-		{
-			LP.rhs[kount]=0.0;
-			LP.sense[kount]='E';
-			kount++;
-		}
+            kk = n + YMap[j];
+            if (LP.xt[kk] > 0.001)
+                yheu[k] = LP.xt[kk];
+        }
+    }
 
-		// Maximization problem
-		LP.minmax=-1;
+    /* ===============================
+       Final feasibility check
+       =============================== */
+    status = Feasibility(xheu, yheu, &zheuf, &bolf);
+    if (status || fabs((*zheu) - zheuf) > LPrec)
+    {
+        *zheu = -Inf;
+    }
 
-		// Load Problem
-		LP.CopyLP();
+    if (iprinx > 0)
+        printf("\n  Zheu = %lf\n", (*zheu));
 
-		// Set MIP
-		LP.SetMIP(cfg.TimeLimit);
-
-		// Setup Custom Cutting Plane
-		LP.CuttingPlaneHeu(n,m,ur,pr,pmax,nY,Y,nUOR,UOR,nUAND,UAND,Flag,FDepP,cfg.Pred,cfg.Cover,cfg.Lifting,cfg.KnapSol,cfg.MaxCuts,&Cuts,0);
-
-		// Optimize
-		LP.SolveMIP(&zheut,&Gap,&Nodes,&Cuts);
-
-		//(*zheu) += zheut;
-
-		// Read the solution
-		ptot=0.0;
-		objtot=0.0;
-		if (iprinx>0) printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
-
-		// Variables xj
-		for (j=0; j<n; j++)
-		{
-			k = i*n+j;
-			if (LP.xt[j]>0.001)
-			{
-				xheu[k] = 1.0;
-				(*zheu) += (m-i)*ur[j]*LP.xt[j];
-				Flag[j] = 1;
-				ptot += p[j]*run[j];
-				objtot += LP.obj[j];
-				if (iprinx>0) printf("%d ",j);
-			}
-			else
-				xheu[k] = 0.0;
-		}
-
-		// Variables yj
-		for (j=0; j<n; j++)
-		{
-			k = i*n+j;
-			if (YMap[j]<0)
-			{
-				yheu[k] = 0.0;
-				continue;
-			}
-
-			kk = n + YMap[j];
-			if (LP.xt[kk]>0.001)
-			{
-				yheu[k] = LP.xt[kk];
-				(*zheu) += (m-i)*u[j]*(a[j]/((double)(nY[j]-1)))*LP.xt[kk];
-				objtot += (m-i)*u[j]*(a[j]/((double)(nY[j]-1)))*LP.xt[kk];
-			}
-			else
-				yheu[k] = 0.0;
-		}
-
-		objval += objtot;
-		if (iprinx>0) printf("\n  ptot=%lf    ovjtot=%lf\n",ptot,objtot);
-	}
-
-	// Check feasibility
-	status = Feasibility(xheu,yheu,&zheuf,&bolf);
-	if (status)
-	{
-		printf("ERROR...  LagrHeuristic solution (MIP) not feasible: status=%d\n",status);
-		fprintf(ferr,"ERROR...  LagrHeuristic solution (MIP) not feasible: status=%d\n",status);
-		*zheu=-Inf;
-		//exit(status);
-	}
-	else if (((*zheu)>zheuf+LPrec)||((*zheu)<zheuf-LPrec))
-	{
-		printf("ERROR...  LagrHeuristic value (MIP): zheu=%lf  zheut=%lf\n",*zheu,zheuf);
-		fprintf(ferr,"ERROR...  LagrHeuristic value (MIP): zheu=%lf  zheut=%lf\n",*zheu,zheuf);
-		*zheu=-Inf;
-		//exit(status);
-	}
-
-	if (iprinx>0) printf("\n  Zheu=%lf\n",(*zheu));
-
-	return 0;
+    return 0;
 }
+
 
 
 //-----------------------------------------------------------------------------
 // Compute an feasible solution using a Lagrangian Heuristic
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::LagrHeuDP(double *urpen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheub, double *yheub)
+int AgileOpt::LagrHeuDP(double* urpen, long nYMap, long* YMap, long* Flag, double* zheu, double* xheub, double* yheub)
 {
-	long i,j,k,h,j1,jj,kk;
+	long i, j, k, h, j1, jj, kk;
 	long iter;
 	long kount;
 	long bol;
@@ -3686,27 +3817,27 @@ int AgileOpt::LagrHeuDP(double *urpen, long nYMap, long *YMap, long *Flag, doubl
 	int status;
 	int bolf;
 	Knapsack KP;
-	double *xheu;
-	double *yheu;
+	double* xheu;
+	double* yheu;
 
 	//(*zheu) = 0.0;
 	(*zheu) = -Inf;
-	xheu = new double [n*m];
-	yheu = new double [n*m];
+	xheu = new double[n * m];
+	yheu = new double[n * m];
 
 	maxw = 0;
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
-		if (maxw<(int(pmax[i]*10+0.001)))
-			maxw = int(pmax[i]*10+0.001);
+		if (maxw < (int(pmax[i] * 10 + 0.001)))
+			maxw = int(pmax[i] * 10 + 0.001);
 	}
 
 	// Allocate Knapsack data structures
-	KP.Malloc(n,maxw);
+	KP.Malloc(n, maxw);
 
-	for (iter=0; iter<3; iter++)
+	for (iter = 0; iter < 3; iter++)
 	{
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
 			Flag[j] = 0;
 		}
@@ -3725,42 +3856,42 @@ int AgileOpt::LagrHeuDP(double *urpen, long nYMap, long *YMap, long *Flag, doubl
 		zheub = 0.0;
 		objval = 0.0;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
 			// LP local into the loop body
 			//CplexObj LP;
 
 			// Compute min urpen, in order to avoid negative price
-			minur=0.0;
-			for (j=0; j<n; j++)
+			minur = 0.0;
+			for (j = 0; j < n; j++)
 			{
-				kk = i*n+j;
+				kk = i * n + j;
 				if (minur > urpen[kk])
 					minur = urpen[kk];
 			}
 
-retry:
+		retry:
 			// Variables xij
 			zheut = 0.0;
 			KP.n = 0;
 			KP.nf = 0;
 			KP.zf = 0.0;
-			KP.W = int(pmax[i]*10+0.001);
-			for (j=0; j<n; j++) 
+			KP.W = int(pmax[i] * 10 + 0.001);
+			for (j = 0; j < n; j++)
 			{
-				k = n*i+j;
-				if (Flag[j]==0)
+				k = n * i + j;
+				if (Flag[j] == 0)
 				{
-					KP.w[KP.n] = int(pr[j]*10+0.001);
-					KP.p[KP.n] = urpen[k]-minur+10.;
+					KP.w[KP.n] = int(pr[j] * 10 + 0.001);
+					KP.p[KP.n] = urpen[k] - minur + 10.;
 					KP.ind[KP.n] = j;
 					KP.n++;
 				}
-				else if (Flag[j]==2)
+				else if (Flag[j] == 2)
 				{
-					KP.W -= int(pr[j]*10+0.001);
-					KP.wf[KP.nf] = int(pr[j]*10+0.001);
-					KP.zf += urpen[k]-minur+10.;
+					KP.W -= int(pr[j] * 10 + 0.001);
+					KP.wf[KP.nf] = int(pr[j] * 10 + 0.001);
+					KP.zf += urpen[k] - minur + 10.;
 					KP.indf[KP.nf] = j;
 					KP.nf++;
 				}
@@ -3775,76 +3906,76 @@ retry:
 			KP.SolveReMap();
 
 			// Read the solution
-			ptot=0.0;
-			objtot=0.0;
-			if (iprinx>1) printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
-			for (j=0; j<n; j++)
+			ptot = 0.0;
+			objtot = 0.0;
+			if (iprinx > 1) printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
+			for (j = 0; j < n; j++)
 			{
-				k = i*n+j;
+				k = i * n + j;
 				xheu[k] = 0.0;
 			}
-			for (j1=0;j1<KP.nf;j1++)
+			for (j1 = 0;j1 < KP.nf;j1++)
 			{
 				j = KP.indf[j1];
-				k = i*n+j;
+				k = i * n + j;
 				xheu[k] = 1.0;
-				zheut += xheu[k] * (m-i)*u[j]*rcr[j];
-				ptot += p[j]*run[j];
-				objtot += xheu[k] * (m-i)*u[j]*rcr[j];
-				if (iprinx>1) printf("%d ",j);
+				zheut += xheu[k] * (m - i) * u[j] * rcr[j];
+				ptot += p[j] * run[j];
+				objtot += xheu[k] * (m - i) * u[j] * rcr[j];
+				if (iprinx > 1) printf("%d ", j);
 			}
-			for (j1=0;j1<KP.n;j1++)
+			for (j1 = 0;j1 < KP.n;j1++)
 			{
 				j = KP.ind[j1];
-				k = i*n+j;
+				k = i * n + j;
 				xheu[k] = (double)KP.x[j1];
-				if (xheu[k]>Prec)
+				if (xheu[k] > Prec)
 				{
-					zheut += xheu[k] * (m-i)*u[j]*rcr[j];
-					ptot += p[j]*run[j];
-					objtot += xheu[k] * (m-i)*u[j]*rcr[j];
-					if (iprinx>1) printf("%d ",j);
+					zheut += xheu[k] * (m - i) * u[j] * rcr[j];
+					ptot += p[j] * run[j];
+					objtot += xheu[k] * (m - i) * u[j] * rcr[j];
+					if (iprinx > 1) printf("%d ", j);
 				}
 			}
-			if (iprinx>1) printf("\n  ptot=%lf\n",ptot);
+			if (iprinx > 1) printf("\n  ptot=%lf\n", ptot);
 
 			// Feasibility check!
 			// The relaxed precedence constraints must be checked
-			for (j=0;j<n;j++)
+			for (j = 0;j < n;j++)
 			{
-				k = i*n+j;
-				if (xheu[k]<Prec)
+				k = i * n + j;
+				if (xheu[k] < Prec)
 					continue;
 
 				goto ConAND;
 
-ConOR:
+			ConOR:
 				// OR Constraints
-				if (nUOR[j]>0)
+				if (nUOR[j] > 0)
 				{
 					bol = 0;
 					jmax = -1;
 					maxur = -Inf;
-					for (kk=0;kk<nUOR[j];kk++)
+					for (kk = 0;kk < nUOR[j];kk++)
 					{
 						jj = UOR[j][kk];
-						k = n*i+jj;
-						if ((Flag[jj]==1)||(xheu[k]>0.999))
+						k = n * i + jj;
+						if ((Flag[jj] == 1) || (xheu[k] > 0.999))
 						{
 							bol = 1;
 							break;
 						}
-						if (maxur<(urpen[k]/pr[jj]))
+						if (maxur < (urpen[k] / pr[jj]))
 						{
 							jmax = jj;
-							maxur = urpen[k]/pr[jj];
+							maxur = urpen[k] / pr[jj];
 						}
 					}
-					if (bol==0)
+					if (bol == 0)
 					{
-						if (iter==0)
+						if (iter == 0)
 							Flag[j] = -1;
-						else 
+						else
 							Flag[jmax] = +2;
 						goto retry;
 					}
@@ -3852,95 +3983,95 @@ ConOR:
 
 				goto Fine;
 
-ConAND:
+			ConAND:
 				// AND Constraints
-				if (nUAND[j]>0)
+				if (nUAND[j] > 0)
 				{
 					jmax = -1;
 					maxur = -Inf;
 					bol = 0;
-					for (kk=0;kk<nUAND[j];kk++)
+					for (kk = 0;kk < nUAND[j];kk++)
 					{
 						jj = UAND[j][kk];
-						k = n*i+jj;
-						if ((Flag[jj]!=1)&&(xheu[k]<0.999))
+						k = n * i + jj;
+						if ((Flag[jj] != 1) && (xheu[k] < 0.999))
 						{
-							if (iter==1)
+							if (iter == 1)
 								Flag[jj] = +2;
-							else if (iter==2)
+							else if (iter == 2)
 							{
-								if (maxur<(urpen[k]/pr[jj]))
+								if (maxur < (urpen[k] / pr[jj]))
 								{
 									jmax = jj;
-									maxur = urpen[k]/pr[jj];
+									maxur = urpen[k] / pr[jj];
 								}
 							}
 
-							bol=1;
+							bol = 1;
 						}
 						if (bol)
 						{
-							if (iter==0)
+							if (iter == 0)
 								Flag[j] = -1;
-							else if (iter==2)
+							else if (iter == 2)
 								Flag[jmax] = +2;
 							goto retry;
 						}
 					}
 				}
 				goto ConOR;
-Fine: ;
+			Fine:;
 			}
 
 			// Setta Flag
-			for (j=0;j<n;j++)
+			for (j = 0;j < n;j++)
 			{
-				if (Flag[j]<0)
+				if (Flag[j] < 0)
 					Flag[j] = 0;
-				k = n*i+j;
-				if (xheu[k]>0.999) 
+				k = n * i + j;
+				if (xheu[k] > 0.999)
 					Flag[j] = 1;
 			}
 
 			ptot = 0.0;
-			if (iprinx>0) printf("Sprint %d (pmax=%lf, zheut=%lf): ",i,pmax[i],zheut);
+			if (iprinx > 0) printf("Sprint %d (pmax=%lf, zheut=%lf): ", i, pmax[i], zheut);
 			zheut = 0.0;
-			for (j=0;j<n;j++)
+			for (j = 0;j < n;j++)
 			{
-				k = i*n+j;
-				if (xheu[k]>Prec)
+				k = i * n + j;
+				if (xheu[k] > Prec)
 				{
-					zheut += xheu[k] * (m-i)*u[j]*rcr[j];
-					ptot += p[j]*run[j];
-					if (iprinx>0) printf("%d ",j);
+					zheut += xheu[k] * (m - i) * u[j] * rcr[j];
+					ptot += p[j] * run[j];
+					if (iprinx > 0) printf("%d ", j);
 				}
 			}
 
 			// Variables yij
-			for (j=0; j<n; j++)
+			for (j = 0; j < n; j++)
 			{
-				k = i*n+j;
+				k = i * n + j;
 				yheu[k] = 0.0;
 
-				if ((nY[j]<2)||(xheu[k]<Prec))
+				if ((nY[j] < 2) || (xheu[k] < Prec))
 					continue;
 
 				//ptot = 0.0;
-				for (j1=0; j1<nY[j]; j1++)
+				for (j1 = 0; j1 < nY[j]; j1++)
 				{
 					jj = Y[j][j1];
-					if (jj==j)
+					if (jj == j)
 						continue;
-					kk = n*i+jj;
+					kk = n * i + jj;
 					yheu[k] += xheu[kk];
 					//ptot += xheu[k];
 				}
 
-				zheut += yheu[k] * (m-i)*u[j]*a[j]/(nY[j]-1); 
+				zheut += yheu[k] * (m - i) * u[j] * a[j] / (nY[j] - 1);
 			}
 
 			zheub += zheut;
-			if (iprinx>0) printf(" --> zheut0=%lf \n",zheut);
+			if (iprinx > 0) printf(" --> zheut0=%lf \n", zheut);
 
 			// There are other items for the next sprints?
 			//bol = 0;
@@ -3956,43 +4087,43 @@ Fine: ;
 			//	break;
 		}
 
-		if ((*zheu)<zheub)
+		if ((*zheu) < zheub)
 		{
-			status = Feasibility(xheu,yheu,&zheuf,&bolf);
+			status = Feasibility(xheu, yheu, &zheuf, &bolf);
 			if (status)
 			{
-				printf("ERROR...  Heuristic solution not feasible (SKIP): iter=%d  status=%d  zheu=%lf  \n",iter,status,(zheub));
-				fprintf(ferr,"ERROR...  Heuristic solution not feasible (SKIP): iter=%d  status=%d  zheu=%lf  \n",iter,status,(zheub));
+				printf("ERROR...  Heuristic solution not feasible (SKIP): iter=%d  status=%d  zheu=%lf  \n", iter, status, (zheub));
+				fprintf(ferr, "ERROR...  Heuristic solution not feasible (SKIP): iter=%d  status=%d  zheu=%lf  \n", iter, status, (zheub));
 				//goto skip;
 				//exit(status);
 				continue;
 			}
-			else if ((zheub>zheuf+LPrec)||(zheub<zheuf-LPrec))
+			else if ((zheub > zheuf + LPrec) || (zheub < zheuf - LPrec))
 			{
-				printf("ERROR...  Heuristic value (SKIP): iter=%d  zheu=%lf  zheut=%lf\n",iter,zheub,zheuf);
-				fprintf(ferr,"ERROR...  Heuristic value (SKIP): iter=%d  zheu=%lf  zheut=%lf\n",iter,zheub,zheuf);
+				printf("ERROR...  Heuristic value (SKIP): iter=%d  zheu=%lf  zheut=%lf\n", iter, zheub, zheuf);
+				fprintf(ferr, "ERROR...  Heuristic value (SKIP): iter=%d  zheu=%lf  zheut=%lf\n", iter, zheub, zheuf);
 				//goto skip;
 				//exit(status);
 				continue;
 			}
 
-			(*zheu) = zheub; 
-			for (j=0; j<n; j++)
-				for (i=0; i<m; i++)
+			(*zheu) = zheub;
+			for (j = 0; j < n; j++)
+				for (i = 0; i < m; i++)
 				{
-					k = i*n+j;
+					k = i * n + j;
 					xheub[k] = xheu[k];
 					yheub[k] = yheu[k];
 				}
 		}
 	}
 
-//skip:
+	//skip:
 
-	if (iprinx>0) printf("\n  Zheu=%lf\n",(*zheu));
+	if (iprinx > 0) printf("\n  Zheu=%lf\n", (*zheu));
 
-	delete [] xheu;
-	delete [] yheu;
+	delete[] xheu;
+	delete[] yheu;
 
 	return 0;
 }
@@ -4002,431 +4133,282 @@ Fine: ;
 // Compute an feasible solution using a Lagrangian Heuristic
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::LagrHeuDPBack(double *urpen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheub, double *yheub)
+int AgileOpt::LagrHeuDPBack(
+    double* urpen,
+    long nYMap,
+    long* YMap,
+    long* Flag,
+    double* zheu,
+    double* xheub,
+    double* yheub,
+    int select_method)
 {
-	long i,j,k,h,j1,jj,kk;
-	long iter,iter1;
-	long kount;
-	long bol;
-	double ptot;
-	double objtot;
-	double objval;
-	double zheuf;
-	double zheut;
-	double zheub;
-	double minur;
-	double maxur;
-	long jmax;
-	long maxw;
-	int status;
-	int bolf;
-	Knapsack KP;
-	double *xheu;
-	double *yheu;
-	double *corr;
-	double *bcorr;
-	double coef;
+    long i, j, k, h, j1, jj, kk;
+    long iter, iter1;
+    long bol;
+    double ptot;
+    double zheuf;
+    double zheut;
+    double zheub;
+    double minur;
+    double maxur;
+    long jmax;
+    long maxw;
+    int status;
+    int bolf;
 
-	//(*zheu) = 0.0;
-	(*zheu) = -Inf;
-	xheu = new double [n*m];
-	yheu = new double [n*m];
-	corr = new double [n];
-	bcorr = new double [n];
+    Knapsack KP;
+    double* xheu = new double[n * m];
+    double* yheu = new double[n * m];
+    double* corr = new double[n];
+    double* bcorr = new double[n];
+    double coef;
 
-	maxw = 0;
-	for (i=0; i<m; i++)
-	{
-		if (maxw<(int(pmax[i]*10+0.001)))
-			maxw = int(pmax[i]*10+0.001);
-	}
+    (*zheu) = -Inf;
 
-	// Allocate Knapsack data structures
-	KP.Malloc(n,maxw);
+    /* -------------------------------
+       Compute maximum knapsack weight
+       ------------------------------- */
+    maxw = 0;
+    for (i = 0; i < m; i++)
+        if (maxw < int(pmax[i] * 10 + 0.001))
+            maxw = int(pmax[i] * 10 + 0.001);
 
-	for (iter=0; iter<5; iter++)
-	{
-		iter1 = 0;
+    KP.Malloc(n, maxw);
 
-		if (iter<3)
-		{
-			coef=1.0;
-			for (j=0;j<n;j++)
-				corr[j]=1.0;
-		}
-		else if (iter<5)
-		{
-			if (iter==3)
-				coef=2.0;
-			else
-				coef=5.0;
-			for (j=0;j<n;j++)
-				corr[j]=1.0;
-				//corr[j]=1.025;
-		}
-		else
-		{
-			coef=1.0;
-			for (j=0;j<n;j++)
-				corr[j]=1.025;
-		}
+    /* ===============================
+       MAIN HEURISTIC LOOP
+       =============================== */
+    for (iter = 0; iter < 5; iter++)
+    {
+        iter1 = 0;
 
-retry4:
-		iter1++;
-		if (iter1>1000)
-			break;
-		bol=0;
-		for (j=0;j<n;j++)
-			if (corr[j]>+1.0e+20) 
-			{
-				bol=1;
-				break;
-			}
-		if (bol)
-			break;
+        if (iter < 3)
+        {
+            coef = 1.0;
+            for (j = 0; j < n; j++) corr[j] = 1.0;
+        }
+        else
+        {
+            coef = (iter == 3) ? 2.0 : 5.0;
+            for (j = 0; j < n; j++) corr[j] = 1.0;
+        }
 
-		for (j=0; j<n; j++)
-		{
-			Flag[j] = 0;
-		}
+    retry4:
+        if (++iter1 > 1000) break;
 
-		// Setup the initial heuristic solution value  
-		zheub = 0.0;
-		objval = 0.0;
+        for (j = 0; j < n; j++) Flag[j] = 0;
 
-		for (i=0; i<m; i++)
-		{
-			// LP local into the loop body
-			//CplexObj LP;
+        zheub = 0.0;
 
-			// Compute min urpen, in order to avoid negative price
-			minur=0.0;
-			for (j=0; j<n; j++)
-			{
-				kk = i*n+j;
-				if (minur > urpen[kk])
-					minur = urpen[kk];
-			}
+        /* ===============================
+           SPRINT LOOP
+           =============================== */
+        for (i = 0; i < m; i++)
+        {
+            /* -----------------------------
+               Objective coefficient lambda
+               ----------------------------- */
+            auto ObjCoeff = [&](long i, long j) -> double
+            {
+                int depsReady = 0;
+                double ratio = 0.0;
 
-retry:
-			// Variables xij
-			zheut = 0.0;
-			KP.n = 0;
-			KP.nf = 0;
-			KP.zf = 0.0;
-			KP.W = int(pmax[i]*10+0.001);
-			for (j=0; j<n; j++) 
-			{
-				k = n*i+j;
-				if (Flag[j]==0)
-				{
-					KP.w[KP.n] = int(pr[j]*10+0.001);
-					KP.p[KP.n] = corr[j]*(urpen[k]-minur+10.);
-					KP.ind[KP.n] = j;
-					KP.n++;
-				}
-				else if (Flag[j]==2)
-				{
-					KP.W -= int(pr[j]*10+0.001);
-					KP.wf[KP.nf] = int(pr[j]*10+0.001);
-					KP.zf += urpen[k]-minur+10.;
-					KP.indf[KP.nf] = j;
-					KP.nf++;
-				}
-			}
+                if (nY[j] == 0) ratio = 1.0;
+                else {
+                    for (h = 0; h < nY[j]; h++)
+                        if (Flag[Y[j][h]] == 1)
+                            depsReady++;
+                    ratio = (double)depsReady / nY[j];
+                }
 
-			if (KP.W < -Prec)
-			{
-				zheub = 0.0;
-				break;
-			}
+                double depPenalty = 0.25 + 0.75 * ratio;
 
-			KP.SolveReMap();
+                int unlocks = 0;
+                for (kk = 0; kk < n; kk++)
+                    for (h = 0; h < nY[kk]; h++)
+                        if (Y[kk][h] == j)
+                            unlocks++;
 
-			// Read the solution
-			ptot=0.0;
-			objtot=0.0;
-			if (iprinx>1) printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
-			for (j=0; j<n; j++)
-			{
-				k = i*n+j;
-				xheu[k] = 0.0;
-			}
-			for (j1=0;j1<KP.nf;j1++)
-			{
-				j = KP.indf[j1];
-				k = i*n+j;
-				xheu[k] = 1.0;
-				zheut += xheu[k] * (m-i)*u[j]*rcr[j];
-				ptot += p[j]*run[j];
-				objtot += xheu[k] * (m-i)*u[j]*rcr[j];
-				if (iprinx>1) printf("%d ",j);
-			}
-			for (j1=0;j1<KP.n;j1++)
-			{
-				j = KP.ind[j1];
-				k = i*n+j;
-				xheu[k] = (double)KP.x[j1];
-				if (xheu[k]>Prec)
-				{
-					zheut += xheu[k] * (m-i)*u[j]*rcr[j];
-					ptot += p[j]*run[j];
-					objtot += xheu[k] * (m-i)*u[j]*rcr[j];
-					if (iprinx>1) printf("%d ",j);
-				}
-			}
-			if (iprinx>1) printf("\n  ptot=%lf\n",ptot);
+                double unlockBonus = 0.5 * unlocks;
+                double base = (original_m - i);
 
-			// Feasibility check!
-			// The relaxed precedence constraints must be checked
-			for (j=0;j<n;j++)
-			{
-				k = i*n+j;
-				if (xheu[k]<Prec)
-					continue;
+                switch (select_method)
+                {
+                case 1: return base * u[j] * rcr[j];
+                case 2: return base * u[j] * rcr[j] * depPenalty + unlockBonus;
+                case 3: return base * u[j] * run[j];
+                case 4: return base * u[j] * run[j] * depPenalty + unlockBonus;
+                case 5: return base * p[j];
+                case 6: return base * p[j] * depPenalty + unlockBonus;
+                default: return base * u[j] * rcr[j];
+                }
+            };
 
-				goto ConAND;
+            /* -----------------------------
+               Avoid negative profits (KP)
+               ----------------------------- */
+            minur = 0.0;
+            for (j = 0; j < n; j++)
+                if (minur > urpen[i * n + j])
+                    minur = urpen[i * n + j];
 
-ConOR:
-				// OR Constraints
-				if (nUOR[j]>0)
-				{
-					bol = 0;
-					jmax = -1;
-					maxur = -Inf;
-					for (kk=0;kk<nUOR[j];kk++)
-					{
-						jj = UOR[j][kk];
-						k = n*i+jj;
-						if ((Flag[jj]==1)||(xheu[k]>0.999))
-						{
-							bol = 1;
-							break;
-						}
-						if (maxur<(urpen[k]/pr[jj]))
-						{
-							jmax = jj;
-							maxur = urpen[k]/pr[jj];
-						}
-					}
-					if (bol==0)
-					{
-						if (iter>=3)
-						{
-							for (kk=0;kk<nUOR[j];kk++)
-							{
-								jj = UOR[j][kk];
-								k = n*i+jj;
-								if ((Flag[jj]!=1)&&(xheu[k]<0.999))
-								{
-									if (iter<5)
-										corr[jj] = coef*corr[jj];
-									else
-										corr[jj] = corr[jj]*corr[jj];
-								}
-							}
-							goto retry4;
-						}
-						else if (iter==0)
-							Flag[j] = -1;
-						else 
-							Flag[jmax] = +2;
+        retry:
+            KP.n = 0;
+            KP.nf = 0;
+            KP.zf = 0.0;
+            KP.W = int(pmax[i] * 10 + 0.001);
 
-						goto retry;
-					}
-				}
+            for (j = 0; j < n; j++)
+            {
+                k = i * n + j;
+                if (Flag[j] == 0)
+                {
+                    KP.w[KP.n] = int(pr[j] * 10 + 0.001);
+                    KP.p[KP.n] = corr[j] * (urpen[k] - minur + 10.0);
+                    KP.ind[KP.n++] = j;
+                }
+                else if (Flag[j] == 2)
+                {
+                    KP.W -= int(pr[j] * 10 + 0.001);
+                    KP.wf[KP.nf] = int(pr[j] * 10 + 0.001);
+                    KP.zf += urpen[k] - minur + 10.0;
+                    KP.indf[KP.nf++] = j;
+                }
+            }
 
-				goto Fine;
+            if (KP.W < -Prec) { zheub = 0.0; break; }
 
-ConAND:
-				// AND Constraints
-				if (nUAND[j]>0)
-				{
-					jmax = -1;
-					maxur = -Inf;
-					bol = 0;
-					for (kk=0;kk<nUAND[j];kk++)
-					{
-						jj = UAND[j][kk];
-						k = n*i+jj;
-						if ((Flag[jj]!=1)&&(xheu[k]<0.999))
-						{
-							if (iter>=3)
-							{
-								if (iter<5)
-									corr[jj] = coef*corr[jj];
-								else
-									corr[jj] = corr[jj]*corr[jj];
-							}
-							else if (iter==1)
-								Flag[jj] = +2;
-							else if (iter==2)
-							{
-								if (maxur<(urpen[k]/pr[jj]))
-								{
-									jmax = jj;
-									maxur = urpen[k]/pr[jj];
-								}
-							}
+            KP.SolveReMap();
 
-							bol=1;
-						}
-						if (bol)
-						{
-							if (iter>=3)
-								goto retry4;
-							else if (iter==0)
-								Flag[j] = -1;
-							else if (iter==2)
-								Flag[jmax] = +2;
+            /* -----------------------------
+               Read solution
+               ----------------------------- */
+            zheut = 0.0;
+            for (j = 0; j < n; j++)
+                xheu[i * n + j] = 0.0;
 
-							goto retry;
-						}
-					}
-				}
-				goto ConOR;
-Fine: ;
-			}
+            for (j1 = 0; j1 < KP.nf; j1++)
+                xheu[i * n + KP.indf[j1]] = 1.0;
 
-			// Setta Flag
-			for (j=0;j<n;j++)
-			{
-				if (Flag[j]<0)
-					Flag[j] = 0;
-				k = n*i+j;
-				if (xheu[k]>0.999) 
-					Flag[j] = 1;
-			}
+            for (j1 = 0; j1 < KP.n; j1++)
+                if (KP.x[j1] > 0)
+                    xheu[i * n + KP.ind[j1]] = 1.0;
 
-			ptot = 0.0;
-			if (iprinx>0) printf("Sprint %d (pmax=%lf, zheut=%lf): ",i,pmax[i],zheut);
-			zheut = 0.0;
-			for (j=0;j<n;j++)
-			{
-				k = i*n+j;
-				if (xheu[k]>Prec)
-				{
-					zheut += xheu[k] * (m-i)*u[j]*rcr[j];
-					ptot += p[j]*run[j];
-					if (iprinx>0) printf("%d ",j);
-				}
-			}
+            /* -----------------------------
+               Precedence feasibility
+               ----------------------------- */
+            for (j = 0; j < n; j++)
+            {
+                k = i * n + j;
+                if (xheu[k] < Prec) continue;
 
-			// Variables yij
-			for (j=0; j<n; j++)
-			{
-				k = i*n+j;
-				yheu[k] = 0.0;
+                if (nUAND[j] > 0)
+                {
+                    for (kk = 0; kk < nUAND[j]; kk++)
+                    {
+                        jj = UAND[j][kk];
+                        if (xheu[i * n + jj] < 0.999)
+                        {
+                            Flag[j] = -1;
+                            goto retry;
+                        }
+                    }
+                }
 
-				if ((nY[j]<2)||(xheu[k]<Prec))
-					continue;
+                if (nUOR[j] > 0)
+                {
+                    bol = 0;
+                    for (kk = 0; kk < nUOR[j]; kk++)
+                    {
+                        jj = UOR[j][kk];
+                        if (xheu[i * n + jj] > 0.999) { bol = 1; break; }
+                    }
+                    if (!bol)
+                    {
+                        Flag[j] = -1;
+                        goto retry;
+                    }
+                }
+            }
 
-				//ptot = 0.0;
-				for (j1=0; j1<nY[j]; j1++)
-				{
-					jj = Y[j][j1];
-					if (jj==j)
-						continue;
-					kk = n*i+jj;
-					yheu[k] += xheu[kk];
-					//ptot += xheu[k];
-				}
+            /* -----------------------------
+               Set flags + compute Z
+               ----------------------------- */
+            for (j = 0; j < n; j++)
+            {
+                k = i * n + j;
+                if (xheu[k] > Prec)
+                {
+                    Flag[j] = 1;
+                    zheut += ObjCoeff(i, j);
+                }
+            }
 
-				zheut += yheu[k] * (m-i)*u[j]*a[j]/(nY[j]-1); 
-			}
+            /* -----------------------------
+               Build yheu (feasibility only)
+               ----------------------------- */
+            for (j = 0; j < n; j++)
+            {
+                k = i * n + j;
+                yheu[k] = 0.0;
+                if (xheu[k] < Prec || nY[j] < 2) continue;
 
-			zheub += zheut;
-			if (iprinx>0) printf(" --> zheut0=%lf \n",zheut);
+                for (h = 0; h < nY[j]; h++)
+                    yheu[k] += xheu[i * n + Y[j][h]];
+            }
 
-			// There are other items for the next sprints?
-			//bol = 0;
-			//for (j=0;j<n;j++)
-			//{
-			//	if (Flag[j]==0)
-			//	{
-			//		bol = 1;
-			//		break;
-			//	}
-			//}
-			//if (bol==0)
-			//	break;
-		}
+            zheub += zheut;
+        }
 
-		// Try swap!!!
-		status = Feasibility(xheu,yheu,&zheuf,&bolf);
-		if (status)
-			continue;
-		HeuSwaps(&zheub,xheu,yheu);
+        /* ===============================
+           FINAL FEASIBILITY + SWAPS
+           =============================== */
+        status = Feasibility(xheu, yheu, &zheuf, &bolf);
+        if (status) continue;
 
-		if ((*zheu)<zheub)
-		{
-			status = Feasibility(xheu,yheu,&zheuf,&bolf);
-			if (status)
-			{
-				printf("ERROR...  Heuristic solution not feasible (SKIP): iter=%d  status=%d  zheu=%lf  \n",iter,status,(zheub));
-				fprintf(ferr,"ERROR...  Heuristic solution not feasible (SKIP): iter=%d  status=%d  zheu=%lf  \n",iter,status,(zheub));
-				//goto skip;
-				//exit(status);
-				continue;
-			}
-			else if ((zheub>zheuf+LPrec)||(zheub<zheuf-LPrec))
-			{
-				printf("ERROR...  Heuristic value (SKIP): iter=%d  zheu=%lf  zheut=%lf\n",iter,zheub,zheuf);
-				fprintf(ferr,"ERROR...  Heuristic value (SKIP): iter=%d  zheu=%lf  zheut=%lf\n",iter,zheub,zheuf);
-				//goto skip;
-				//exit(status);
-				continue;
-			}
+        HeuSwaps(&zheub, xheu, yheu);
 
-			(*zheu) = zheub; 
-			for (j=0; j<n; j++)
-			{
-				bcorr[j]=corr[j];
-				for (i=0; i<m; i++)
-				{
-					k = i*n+j;
-					xheub[k] = xheu[k];
-					yheub[k] = yheu[k];
-				}
-			}
-		}
-	}
+        if ((*zheu) < zheub)
+        {
+            status = Feasibility(xheu, yheu, &zheuf, &bolf);
+            if (!status && fabs(zheub - zheuf) < LPrec)
+            {
+                (*zheu) = zheub;
+                for (j = 0; j < n; j++)
+                {
+                    bcorr[j] = corr[j];
+                    for (i = 0; i < m; i++)
+                    {
+                        k = i * n + j;
+                        xheub[k] = xheu[k];
+                        yheub[k] = yheu[k];
+                    }
+                }
+            }
+        }
+    }
 
-//skip:
+    if (iprinx > 0)
+        printf("\n  Zheu = %lf\n", (*zheu));
 
-	//status = Feasibility(xheub,yheub,&zheub,&bolf);
-	//if (status)
-	//	status=status;
+    delete[] xheu;
+    delete[] yheu;
+    delete[] corr;
+    delete[] bcorr;
 
-	if (iprinx>0) printf("\n  Zheu=%lf\n",(*zheu));
-
-	//for (i=0; i<m; i++)
-	//	for (j=0; j<n; j++)
-	//	{
-	//		k=n*i+j;
-	//		urpen[k]=bcorr[j]*urpen[k];
-	//		if (urpen[k]<-1.0e+10)
-	//			urpen[k]=-1.0e+10;
-	//		if (urpen[k]>+1.0e+10) 
-	//			urpen[k]=+1.0e+10;
-	//	}
-
-	delete [] xheu;
-	delete [] yheu;
-	delete [] corr;
-	delete [] bcorr;
-
-	return 0;
+    return 0;
 }
+
 
 
 //-----------------------------------------------------------------------------
 // Compute an feasible solution using a Lagrangian Heuristic
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::LagrHeuDP_Old(double *urpen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheu)
+int AgileOpt::LagrHeuDP_Old(double* urpen, long nYMap, long* YMap, long* Flag, double* zheu, double* xheu)
 {
-	long i,j,k,h,j1,jj,kk;
+	long i, j, k, h, j1, jj, kk;
 	long iter;
 	long kount;
 	long bol;
@@ -4437,72 +4419,72 @@ int AgileOpt::LagrHeuDP_Old(double *urpen, long nYMap, long *YMap, long *Flag, d
 	long maxw;
 	long attempt;
 	long maxattempt;
-	double *uraux;
+	double* uraux;
 	double aux;
 	Knapsack KP;
 
-	uraux = new double [n*m];
+	uraux = new double[n * m];
 
 	(*zheu) = 0.0;
 
-	for (iter=0; iter<2; iter++)
+	for (iter = 0; iter < 2; iter++)
 	{
-		if (iter==0)
+		if (iter == 0)
 			maxattempt = 0;
 		else
 			maxattempt = 5;
 
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
 			Flag[j] = 0;
 		}
 
 		maxw = 0;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			if (maxw<(int(pmax[i]*10+0.001)))
-				maxw = int(pmax[i]*10+0.001);
+			if (maxw < (int(pmax[i] * 10 + 0.001)))
+				maxw = int(pmax[i] * 10 + 0.001);
 		}
 
 		// Allocate Knapsack data structures
-		KP.Malloc(n,maxw);
+		KP.Malloc(n, maxw);
 
 		// Setup the initial heuristic solution value  
 		zheub = 0.0;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
 			// LP local into the loop body
 			//CplexObj LP;
 
 			// Compute min urpen, in order to avoid negative price
-			minur=0.0;
-			for (j=0; j<n; j++)
+			minur = 0.0;
+			for (j = 0; j < n; j++)
 			{
-				kk = i*n+j;
+				kk = i * n + j;
 				if (minur > urpen[kk])
 					minur = urpen[kk];
 			}
-			for (j=0; j<n; j++)
+			for (j = 0; j < n; j++)
 			{
-				kk = i*n+j;
-				uraux[kk] = urpen[kk]-minur+1.;
+				kk = i * n + j;
+				uraux[kk] = urpen[kk] - minur + 1.;
 			}
 
 			attempt = 0;
-retry:
+		retry:
 			attempt++;
 
 			// Variables xij
 			zheut = 0.0;
 			KP.n = 0;
-			KP.W = int(pmax[i]*10+0.001);
-			for (j=0; j<n; j++) 
+			KP.W = int(pmax[i] * 10 + 0.001);
+			for (j = 0; j < n; j++)
 			{
-				k = n*i+j;
-				if (Flag[j]==0)
+				k = n * i + j;
+				if (Flag[j] == 0)
 				{
-					KP.w[KP.n] = int(pr[j]*10+0.001);
+					KP.w[KP.n] = int(pr[j] * 10 + 0.001);
 					//KP.p[KP.n] = urpen[k]-minur+10.;
 					KP.p[KP.n] = uraux[k];
 					KP.ind[KP.n] = j;
@@ -4513,65 +4495,65 @@ retry:
 			KP.SolveReMap();
 
 			// Read the solution
-			ptot=0.0;
-			if (iprinx>0) printf("Sprint %d (pmax=%lf): ",i,pmax[i]);
-			for (j=0; j<n; j++)
+			ptot = 0.0;
+			if (iprinx > 0) printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
+			for (j = 0; j < n; j++)
 			{
-				k = i*n+j;
+				k = i * n + j;
 				xheu[k] = 0.0;
 			}
-			for (j1=0;j1<KP.n;j1++)
+			for (j1 = 0;j1 < KP.n;j1++)
 			{
 				j = KP.ind[j1];
-				k = i*n+j;
+				k = i * n + j;
 				xheu[k] = (double)KP.x[j1];
-				if (xheu[k]>Prec)
+				if (xheu[k] > Prec)
 				{
-					zheut += xheu[k] * (m-i)*u[j]*rcr[j];
-					ptot += p[j]*run[j];
-					if (iprinx>0) printf("%d ",j);
+					zheut += xheu[k] * (m - i) * u[j] * rcr[j];
+					ptot += p[j] * run[j];
+					if (iprinx > 0) printf("%d ", j);
 				}
 			}
-			if (iprinx>0) printf("\n  ptot=%lf\n",ptot);
+			if (iprinx > 0) printf("\n  ptot=%lf\n", ptot);
 
 			// Feasibility check!
 			// The relaxed precedence constraints must be checked
-			for (j1=0;j1<KP.n;j1++)
+			for (j1 = 0;j1 < KP.n;j1++)
 			{
 				j = KP.ind[j1];
-				if (KP.x[j1]>0) 
+				if (KP.x[j1] > 0)
 				{
 					// OR Constraints
-					if (nUOR[j]>0)
+					if (nUOR[j] > 0)
 					{
 						bol = 0;
-						for (kk=0;kk<nUOR[j];kk++)
+						for (kk = 0;kk < nUOR[j];kk++)
 						{
 							jj = UOR[j][kk];
-							k = n*i+jj;
-							if ((Flag[jj]==1)||(xheu[k]>0.999))
+							k = n * i + jj;
+							if ((Flag[jj] == 1) || (xheu[k] > 0.999))
 							{
 								//urpen[k] = urpen[n*i+j];
-								if (iter==1)
+								if (iter == 1)
 								{
-									aux = (uraux[n*i+j]/pr[j])*pr[jj]+1.;
-									if (aux<uraux[k]+0.999)
-										aux = uraux[k]*1.2;
+									aux = (uraux[n * i + j] / pr[j]) * pr[jj] + 1.;
+									if (aux < uraux[k] + 0.999)
+										aux = uraux[k] * 1.2;
 									uraux[k] = aux;
 								}
-								else if (iter==2)
-									uraux[k] = uraux[n*i+j];
+								else if (iter == 2)
+									uraux[k] = uraux[n * i + j];
 								bol = 1;
 								break;
 							}
 						}
-						if (bol==0)
+						if (bol == 0)
 						{
-							if ((iter==0)||(attempt>maxattempt))
+							if ((iter == 0) || (attempt > maxattempt))
 								Flag[j] = -1;
-							else if (attempt>0)
+							else if (attempt > 0)
 							{
-								k = n*i+j;
+								k = n * i + j;
 								uraux[k] = uraux[k] / 1.1;
 								//if (urpen[k]>Prec)
 								//	urpen[k] = urpen[k] / 1.1;
@@ -4585,34 +4567,34 @@ retry:
 					}
 
 					// AND Constraints
-					if (nUAND[j]>0)
+					if (nUAND[j] > 0)
 					{
 						bol = 0;
-						for (kk=0;kk<nUAND[j];kk++)
+						for (kk = 0;kk < nUAND[j];kk++)
 						{
 							jj = UAND[j][kk];
-							k = n*i+jj;
-							if ((Flag[jj]!=1)&&(xheu[k]<0.999))
+							k = n * i + jj;
+							if ((Flag[jj] != 1) && (xheu[k] < 0.999))
 							{
 								//urpen[k] = urpen[n*i+j];
-								if (iter==1)
+								if (iter == 1)
 								{
-									aux = (uraux[n*i+j]/pr[j])*pr[jj]+1.;
-									if (aux<uraux[k]+0.999)
-										aux = uraux[k]*1.2;
+									aux = (uraux[n * i + j] / pr[j]) * pr[jj] + 1.;
+									if (aux < uraux[k] + 0.999)
+										aux = uraux[k] * 1.2;
 									uraux[k] = aux;
 								}
-								else if (iter==2)
-									uraux[k] = uraux[n*i+j];
-								bol=1;
+								else if (iter == 2)
+									uraux[k] = uraux[n * i + j];
+								bol = 1;
 							}
 							if (bol)
 							{
-								if ((iter==0)||(attempt>maxattempt))
+								if ((iter == 0) || (attempt > maxattempt))
 									Flag[j] = -1;
-								else if (attempt>0)
+								else if (attempt > 0)
 								{
-									k = n*i+j;
+									k = n * i + j;
 									uraux[k] = uraux[k] / 1.1;
 									//if (urpen[k]>Prec)
 									//	urpen[k] = urpen[k] / 1.1;
@@ -4630,45 +4612,45 @@ retry:
 			}
 
 			// Setta Flag
-			for (j=0;j<n;j++)
+			for (j = 0;j < n;j++)
 			{
-				if (Flag[j]<0)
+				if (Flag[j] < 0)
 					Flag[j] = 0;
-				k = n*i+j;
-				if (xheu[k]>0.999) 
+				k = n * i + j;
+				if (xheu[k] > 0.999)
 					Flag[j] = 1;
 			}
 
 			// Variables yij
-			for (j=0; j<n; j++)
+			for (j = 0; j < n; j++)
 			{
-				if ((nY[j]<2)||(xheu[k]<Prec))
+				if ((nY[j] < 2) || (xheu[k] < Prec))
 					continue;
 
 				ptot = 0.0;
-				for (j1=0; j1<nY[j]; j1++)
+				for (j1 = 0; j1 < nY[j]; j1++)
 				{
 					jj = Y[j][j1];
-					if (jj==j)
+					if (jj == j)
 						continue;
-					k = n*i+jj;
+					k = n * i + jj;
 					ptot += xheu[k];
 				}
 
-				zheut += ptot * (m-i)*u[j]*a[j]/(nY[j]-1); 
+				zheut += ptot * (m - i) * u[j] * a[j] / (nY[j] - 1);
 			}
 
 			zheub += zheut;
 
 		}
 
-		if ((*zheu)<zheub)
-			(*zheu) = zheub; 
+		if ((*zheu) < zheub)
+			(*zheu) = zheub;
 	}
 
-	if (iprinx>0) printf("\n  Zheu=%lf\n",(*zheu));
+	if (iprinx > 0) printf("\n  Zheu=%lf\n", (*zheu));
 
-	delete [] uraux;
+	delete[] uraux;
 
 	return 0;
 }
@@ -4679,27 +4661,27 @@ retry:
 // (return 0 if feasible; return >0 if unfeasible)
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
+int AgileOpt::Feasibility(double* xheu, double* yheu, double* zheu, int* bol)
 {
-	long i,j,k;
-	long i1,j1,k1;
-	long ii,jj,kk;
+	long i, j, k;
+	long i1, j1, k1;
+	long ii, jj, kk;
 	double aux;
 
 	//Setup initial values
-	if (zheu!=NULL) (*zheu) = 0.0;
+	if (zheu != NULL) (*zheu) = 0.0;
 	(*bol) = 0;
 
 	// Capacity Constraints
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		aux = 0.0;
-		for (j=0; j<n; j++)
+		for (j = 0; j < n; j++)
 		{
-			k = i*n+j;
-			aux += pr[j]*xheu[k];
+			k = i * n + j;
+			aux += pr[j] * xheu[k];
 		}
-		if (aux>(pmax[i]+Prec))
+		if (aux > (pmax[i] + Prec))
 		{
 			*bol = 1;
 			return (*bol);
@@ -4707,15 +4689,15 @@ int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
 	}
 
 	// Assignment Constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		aux = 0.0;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			aux += xheu[k];
 		}
-		if ((aux<(1.-Prec))||(aux>(1.+Prec)))
+		if ((aux < (1. - Prec)) || (aux > (1. + Prec)))
 		{
 			*bol = 2;
 			return (*bol);
@@ -4723,28 +4705,28 @@ int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
 	}
 
 	// OR Constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUOR[j]<1)
+		if (nUOR[j] < 1)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			if (xheu[k]<Prec)
+			k = i * n + j;
+			if (xheu[k] < Prec)
 				continue;
 
 			aux = -xheu[k];
-			for (jj=0; jj<nUOR[j]; jj++)
+			for (jj = 0; jj < nUOR[j]; jj++)
 			{
 				j1 = UOR[j][jj];
-				for (i1=0; i1<=i; i1++)
+				for (i1 = 0; i1 <= i; i1++)
 				{
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					aux += xheu[k1];
 				}
 			}
-			if (aux<-Prec)
+			if (aux < -Prec)
 			{
 				*bol = 3;
 				return (*bol);
@@ -4753,28 +4735,28 @@ int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
 	}
 
 	// AND Constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUAND[j]<1)
+		if (nUAND[j] < 1)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			if (xheu[k]<Prec)
+			k = i * n + j;
+			if (xheu[k] < Prec)
 				continue;
 
-			aux = -((double)nUAND[j])*xheu[k];
-			for (jj=0; jj<nUAND[j]; jj++)
+			aux = -((double)nUAND[j]) * xheu[k];
+			for (jj = 0; jj < nUAND[j]; jj++)
 			{
 				j1 = UAND[j][jj];
-				for (i1=0; i1<=i; i1++)
+				for (i1 = 0; i1 <= i; i1++)
 				{
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					aux += xheu[k1];
 				}
 			}
-			if (aux<-Prec)
+			if (aux < -Prec)
 			{
 				*bol = 4;
 				return (*bol);
@@ -4783,25 +4765,25 @@ int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
 	}
 
 	// Y1 Constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2)
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			aux = yheu[k];
-			for (jj=0; jj<nY[j]; jj++)
+			for (jj = 0; jj < nY[j]; jj++)
 			{
 				j1 = Y[j][jj];
-				if (j!=j1)
+				if (j != j1)
 				{
-					k1 = i*n+j1;
+					k1 = i * n + j1;
 					aux -= xheu[k1];
 				}
 			}
-			if (aux>Prec)
+			if (aux > Prec)
 			{
 				*bol = 5;
 				return (*bol);
@@ -4810,17 +4792,17 @@ int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
 	}
 
 	// Y2 Constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2)
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			aux = yheu[k] - ((double)(nY[j]-1))*xheu[k];
+			k = i * n + j;
+			aux = yheu[k] - ((double)(nY[j] - 1)) * xheu[k];
 
-			if (aux>Prec)
+			if (aux > Prec)
 			{
 				*bol = 6;
 				return (*bol);
@@ -4829,16 +4811,16 @@ int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
 	}
 
 	// Evaluate objective function
-	if (zheu!=NULL)
+	if (zheu != NULL)
 	{
 		(*zheu) = 0.0;
-		for (i=0; i<m; i++)
-			for (j=0; j<n; j++)
+		for (i = 0; i < m; i++)
+			for (j = 0; j < n; j++)
 			{
-				k = i*n+j;
-				(*zheu) += (double)(m-i)*u[j] * rcr[j] * xheu[k];
-				if (nY[j]>1)
-					(*zheu) += (double)(m-i)*u[j] * (a[j]/((double)(nY[j]-1)))*yheu[k];
+				k = i * n + j;
+				(*zheu) += (double)(m - i) * u[j] * rcr[j] * xheu[k];
+				if (nY[j] > 1)
+					(*zheu) += (double)(m - i) * u[j] * (a[j] / ((double)(nY[j] - 1))) * yheu[k];
 			}
 	}
 
@@ -4850,44 +4832,44 @@ int AgileOpt::Feasibility(double *xheu, double *yheu, double *zheu, int *bol)
 // Update penalties
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::UpdatePen(double alpha, double zheu, double zlr, double *xlr, double *Lambda, double *LambdaOR, double *LambdaAND, 
-	                    double *subgr, double *subgrOR, double *subgrAND)
+int AgileOpt::UpdatePen(double alpha, double zheu, double zlr, double* xlr, double* Lambda, double* LambdaOR, double* LambdaAND,
+	double* subgr, double* subgrOR, double* subgrAND)
 {
-	long i,j,k;
-	long i1,j1,k1;
+	long i, j, k;
+	long i1, j1, k1;
 	long jj;
-	double step,den;
-	
+	double step, den;
+
 	den = 0.0;
 
 	// Assignment constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		subgr[j] = -1.0;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			subgr[j] += xlr[k];
 		}
 		den += subgr[j];
 	}
 
 	// OR Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUOR[j]==0) 
+		if (nUOR[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			subgrOR[k] = -xlr[k];
-			for (i1=0; i1<=i; i1++)
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUOR[j]; jj++)
+				for (jj = 0; jj < nUOR[j]; jj++)
 				{
 					j1 = UOR[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					subgrOR[k] += xlr[k1];
 				}
 			}
@@ -4896,21 +4878,21 @@ int AgileOpt::UpdatePen(double alpha, double zheu, double zlr, double *xlr, doub
 	}
 
 	// AND Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUAND[j]==0) 
+		if (nUAND[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			subgrAND[k] = -(double)nUAND[j]*xlr[k];
-			for (i1=0; i1<=i; i1++)
+			k = i * n + j;
+			subgrAND[k] = -(double)nUAND[j] * xlr[k];
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUAND[j]; jj++)
+				for (jj = 0; jj < nUAND[j]; jj++)
 				{
 					j1 = UAND[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					subgrAND[k] += xlr[k1];
 				}
 			}
@@ -4919,41 +4901,41 @@ int AgileOpt::UpdatePen(double alpha, double zheu, double zlr, double *xlr, doub
 	}
 
 	// Compute step
-	step = alpha*(zlr*.99)/(den*den);
+	step = alpha * (zlr * .99) / (den * den);
 	//step = alpha*(zlr-zheu)/(den*den);
 
 	// Assignment constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		Lambda[j] += step*subgr[j];
+		Lambda[j] += step * subgr[j];
 	}
 
 	// OR Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUOR[j]==0) 
+		if (nUOR[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			LambdaOR[k] += step*subgrOR[k];
-			if (LambdaOR[k]>0.0)
+			k = i * n + j;
+			LambdaOR[k] += step * subgrOR[k];
+			if (LambdaOR[k] > 0.0)
 				LambdaOR[k] = 0.0;
 		}
 	}
 
 	// AND Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUAND[j]==0) 
+		if (nUAND[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			LambdaAND[k] += step*subgrAND[k];
-			if (LambdaAND[k]>0.0)
+			k = i * n + j;
+			LambdaAND[k] += step * subgrAND[k];
+			if (LambdaAND[k] > 0.0)
 				LambdaAND[k] = 0.0;
 		}
 	}
@@ -4966,179 +4948,179 @@ int AgileOpt::UpdatePen(double alpha, double zheu, double zlr, double *xlr, doub
 // Update penalties
 //-----------------------------------------------------------------------------
 //
-int AgileOpt::UpdatePenDP(double alpha, double zheu, double zlr, double *xlr, double *ylr, double *Lambda, double *LambdaOR, double *LambdaAND, 
-	                      double *LambdaY1, double *LambdaY2, double *subgr, double *subgrOR, double *subgrAND, double *subgrY1, double *subgrY2)
+int AgileOpt::UpdatePenDP(double alpha, double zheu, double zlr, double* xlr, double* ylr, double* Lambda, double* LambdaOR, double* LambdaAND,
+	double* LambdaY1, double* LambdaY2, double* subgr, double* subgrOR, double* subgrAND, double* subgrY1, double* subgrY2)
 {
-	long i,j,k;
-	long i1,j1,k1;
+	long i, j, k;
+	long i1, j1, k1;
 	long jj;
-	double step,den;
-	
+	double step, den;
+
 	den = 0.0;
 
 	// Assignment constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
 		subgr[j] = -1.0;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			subgr[j] += xlr[k];
 		}
-		den += (subgr[j]*subgr[j]);
+		den += (subgr[j] * subgr[j]);
 	}
 
 	// OR Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUOR[j]==0) 
+		if (nUOR[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			subgrOR[k] = -xlr[k];
-			for (i1=0; i1<=i; i1++)
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUOR[j]; jj++)
+				for (jj = 0; jj < nUOR[j]; jj++)
 				{
 					j1 = UOR[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					subgrOR[k] += xlr[k1];
 				}
 			}
-			den += (subgrOR[k]*subgrOR[k]);
+			den += (subgrOR[k] * subgrOR[k]);
 		}
 	}
 
 	// AND Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUAND[j]==0) 
+		if (nUAND[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			subgrAND[k] = -(double)nUAND[j]*xlr[k];
-			for (i1=0; i1<=i; i1++)
+			k = i * n + j;
+			subgrAND[k] = -(double)nUAND[j] * xlr[k];
+			for (i1 = 0; i1 <= i; i1++)
 			{
-				for (jj=0; jj<nUAND[j]; jj++)
+				for (jj = 0; jj < nUAND[j]; jj++)
 				{
 					j1 = UAND[j][jj];
-					k1 = i1*n+j1;
+					k1 = i1 * n + j1;
 					subgrAND[k] += xlr[k1];
 				}
 			}
-			den += (subgrAND[k]*subgrAND[k]);
+			den += (subgrAND[k] * subgrAND[k]);
 		}
 	}
 
 	// Constraints Y1
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2) 
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			subgrY1[k] = -ylr[k];
-			for (jj=0; jj<nY[j]; jj++)
+			for (jj = 0; jj < nY[j]; jj++)
 			{
 				j1 = Y[j][jj];
-				if (j1==j)
+				if (j1 == j)
 					continue;
 
-				k1 = i*n+j1;
+				k1 = i * n + j1;
 				subgrY1[k] += xlr[k1];
 			}
-			den += (subgrY1[k]*subgrY1[k]);
+			den += (subgrY1[k] * subgrY1[k]);
 		}
 	}
 
 	// Constraints Y2
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2) 
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
+			k = i * n + j;
 			subgrY2[k] = -ylr[k];
-			subgrY2[k] += (double)(nY[j]-1)*xlr[k];
-			den += (subgrY1[k]*subgrY1[k]);
+			subgrY2[k] += (double)(nY[j] - 1) * xlr[k];
+			den += (subgrY1[k] * subgrY1[k]);
 		}
 	}
 
 	// Compute step
 //2012	step = alpha*(zlr*.99)/den;
-	step = alpha*(0.01*zlr)/den;
+	step = alpha * (0.01 * zlr) / den;
 	//step = alpha*(zlr-zheu)/den;
 
 	// Assignment constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		Lambda[j] += step*subgr[j];
+		Lambda[j] += step * subgr[j];
 	}
 
 	// OR Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUOR[j]==0) 
+		if (nUOR[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			LambdaOR[k] += step*subgrOR[k];
-			if (LambdaOR[k]>0.0)
+			k = i * n + j;
+			LambdaOR[k] += step * subgrOR[k];
+			if (LambdaOR[k] > 0.0)
 				LambdaOR[k] = 0.0;
 		}
 	}
 
 	// AND Precedence constraints
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nUAND[j]==0) 
+		if (nUAND[j] == 0)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			LambdaAND[k] += step*subgrAND[k];
-			if (LambdaAND[k]>0.0)
+			k = i * n + j;
+			LambdaAND[k] += step * subgrAND[k];
+			if (LambdaAND[k] > 0.0)
 				LambdaAND[k] = 0.0;
 		}
 	}
 
 	// Constraints Y1
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2) 
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			LambdaY1[k] += step*subgrY1[k];
-			if (LambdaY1[k]>0.0)
+			k = i * n + j;
+			LambdaY1[k] += step * subgrY1[k];
+			if (LambdaY1[k] > 0.0)
 				LambdaY1[k] = 0.0;
 		}
 	}
 
 	// Constraints Y2
-	for (j=0; j<n; j++)
+	for (j = 0; j < n; j++)
 	{
-		if (nY[j]<2) 
+		if (nY[j] < 2)
 			continue;
 
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
-			k = i*n+j;
-			LambdaY2[k] += step*subgrY2[k];
-			if (LambdaY2[k]>0.0)
+			k = i * n + j;
+			LambdaY2[k] += step * subgrY2[k];
+			if (LambdaY2[k] > 0.0)
 				LambdaY2[k] = 0.0;
 		}
 	}
@@ -5154,29 +5136,29 @@ int AgileOpt::UpdatePenDP(double alpha, double zheu, double zlr, double *xlr, do
 int AgileOpt::Reduction(void)
 {
 	Knapsack KP;
-	long i,j,j1;
+	long i, j, j1;
 	long maxw;
-	double dw,dwmin;
+	double dw, dwmin;
 
 	maxw = 0;
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
-		if (maxw<int(pmax[i]*10+0.001))
-			maxw = int(pmax[i]*10+0.001);
+		if (maxw<int(pmax[i] * 10 + 0.001))
+			maxw = int(pmax[i] * 10 + 0.001);
 	}
 
 	// Setup Knapsack data structure
-	KP.Malloc(n,maxw);
+	KP.Malloc(n, maxw);
 
 	// Try to reduce the Sprint capacity 
-	for (i=0; i<m; i++)
+	for (i = 0; i < m; i++)
 	{
 		KP.n = 0;
-		KP.W = int(pmax[i]*10+0.001);
+		KP.W = int(pmax[i] * 10 + 0.001);
 
-		for (j=0; j<n; j++) 
+		for (j = 0; j < n; j++)
 		{
-			KP.w[KP.n] = int(pr[j]*10+0.001);
+			KP.w[KP.n] = int(pr[j] * 10 + 0.001);
 			KP.p[KP.n] = KP.w[KP.n];
 			KP.ind[KP.n] = j;
 			KP.n++;
@@ -5188,23 +5170,23 @@ int AgileOpt::Reduction(void)
 		KP.Solve();
 #endif
 
-		pmax[i] = pmax[i] - (double)(KP.W-KP.zopt)/10.;
+		pmax[i] = pmax[i] - (double)(KP.W - KP.zopt) / 10.;
 	}
 
 	// Try to increase the story weight 
-	for (j1=0; j1<n; j1++) 
+	for (j1 = 0; j1 < n; j1++)
 	{
 		dwmin = Inf;
-		for (i=0; i<m; i++)
+		for (i = 0; i < m; i++)
 		{
 			KP.n = 0;
-			KP.W = int(pmax[i]*10+0.001) - int(pr[j1]*10+0.001);
+			KP.W = int(pmax[i] * 10 + 0.001) - int(pr[j1] * 10 + 0.001);
 
-			for (j=0; j<n; j++) 
+			for (j = 0; j < n; j++)
 			{
-				if (j==j1) continue;
+				if (j == j1) continue;
 
-				KP.w[KP.n] = int(pr[j]*10+0.001);
+				KP.w[KP.n] = int(pr[j] * 10 + 0.001);
 				KP.p[KP.n] = KP.w[KP.n];
 				KP.ind[KP.n] = j;
 				KP.n++;
@@ -5216,11 +5198,11 @@ int AgileOpt::Reduction(void)
 			KP.Solve();
 #endif
 
-			dw = (double)(KP.W-KP.zopt);
-			if (dwmin>dw)
+			dw = (double)(KP.W - KP.zopt);
+			if (dwmin > dw)
 				dwmin = dw;
 		}
-		pr[j1] = pr[j1] + dwmin/10.;
+		pr[j1] = pr[j1] + dwmin / 10.;
 	}
 
 	return 0;

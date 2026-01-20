@@ -88,6 +88,10 @@ public:
 	double PercentageUtilization;
 	double DeviationRisk;
 	double DeviationUncertaintyRisk;
+	double UncertaintyMin;
+	double UncertaintyMax;
+	double RiskMin;
+	double RiskMax;
 	double HalfUtilitiSprint;
 
 	// Constructor and Destructorr
