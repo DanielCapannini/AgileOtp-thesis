@@ -42,9 +42,9 @@ private:
 	double AgileOpt::Move(double *xheu, double *yheu, long j1, long i1, long i);
 	int AgileOpt::HeuSwaps(double *zheu, double *xheu, double *yheu);
 	int AgileOpt::HeuSwapsOld(double *zheu, double *xheu, double *yheu);
-	int AgileOpt::LagrHeu(double *urpen, double *apen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheu, double *yheu);
+	int AgileOpt::LagrHeu(double *urpen, double *apen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheu, double *yheu, int select_method);
 	int AgileOpt::LagrHeuDP(double *urpen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheu, double *yheu);
-	int AgileOpt::LagrHeuDPBack(double *urpen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheub, double *yheub);
+	int AgileOpt::LagrHeuDPBack(double *urpen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheub, double *yheub, int select_method);
 	int AgileOpt::LagrHeuDP_Old(double *urpen, long nYMap, long *YMap, long *Flag, double *zheu, double *xheu);
 	int AgileOpt::UpdatePen(double alpha, double zheu, double zlr, double *xlr, double *Lambda, double *LambdaOR, double *LambdaAND, 
 		                    double *subgr, double *subgrOR, double *subgrAND);
