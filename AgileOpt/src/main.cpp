@@ -207,7 +207,7 @@ void main(void)
 		Prob.cfg.AddLB=0;
 
 		t1 = clock();
-		Prob.Optimize(select_method);
+		Prob.Optimize(select_method, fname+j);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -234,7 +234,7 @@ void main(void)
 
 
 		t1 = clock();
-		Prob.OptimizeHeu(select_method);
+		Prob.OptimizeHeu(select_method, fname+j);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -258,7 +258,7 @@ void main(void)
 		Prob.cfg.Sentinel = 0;
 
 		t1 = clock();
-		Prob.OptimizeHeu_Improved(select_method);
+		Prob.OptimizeHeu_Improved(select_method, fname+j);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -284,7 +284,7 @@ void main(void)
 
 
 		t1 = clock();
-		Prob.OptimizeLagrHeu(select_method);
+		Prob.OptimizeLagrHeu(select_method, fname+j);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 
@@ -313,7 +313,7 @@ void main(void)
 
 
 		t1 = clock();
-		Prob.OptimizeLagrHeu(select_method);
+		Prob.OptimizeLagrHeu(select_method, fname+j);
 		t2 = clock();
 		dt = (double)(t2 - t1) / CLOCKS_PER_SEC;
 

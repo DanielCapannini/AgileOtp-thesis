@@ -103,10 +103,10 @@ public:
 	int ReadDataWithoutConstraints(const char *name);
 
 	// Optimize the Agile Schedule
-	int AgileOpt::Optimize(int select_method);
-	int AgileOpt::OptimizeHeu(int select_method);
-	int AgileOpt::OptimizeHeu_Improved(int select_method);
-	int AgileOpt::OptimizeLagrHeu(int select_method);
+	int AgileOpt::Optimize(int select_method, char* fname);
+	int AgileOpt::OptimizeHeu(int select_method, char* fname);
+	int AgileOpt::OptimizeHeu_Improved(int select_method, char* fname);
+	int AgileOpt::OptimizeLagrHeu(int select_method, char* fname);
 };
 
 
