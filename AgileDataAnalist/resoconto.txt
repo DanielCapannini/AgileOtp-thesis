@@ -1,0 +1,4 @@
+=== RESOCONTO PER SOLUZIONE ===
+
+File: solutionCLEX1.json | Soluzione: stance_06_01.txt | Sprint: 5 | STD Rischio: 2.227 | Rischio max/min: 10.600/5.100 | STD Incertezza: 2.133 | Incertezza max/min: 10.100/4.300 | Utilizzo medio capacità: 95.59%
+File: solutionCLEX1.json | Soluzione: stance_06_02.txt | Sprint: 7 | STD Rischio: 2.345 | Rischio max/min: 9.200/1.800 | STD Incertezza: 1.993 | Incertezza max/min: 7.700/1.600 | Utilizzo medio capacità: 84.68%

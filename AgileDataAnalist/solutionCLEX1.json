@@ -247,7 +247,8 @@
       ],
       "used_capacity": 0.0000
     }
-  ,
+  ]
+},
 {
    "name": "stance_06_02.txt",
    "objective_value": 22090.3333,
@@ -494,4 +495,4 @@
       "used_capacity": 0.0000
     }
   ]
-}]}]}
+}]}
