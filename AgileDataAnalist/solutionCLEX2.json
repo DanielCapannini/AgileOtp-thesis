@@ -1,0 +1,1000 @@
+{
+  "solutions": [
+{
+   "name": "stance_06_01.txt",
+   "objective_value": 12821.3000,
+   "number_of_sprints": 9,
+   "sprints": [
+    {
+      "id": 0,
+      "capacity": 32.2000,
+      "stories": [
+        {
+          "id": 1,
+          "utility": 24.0000,
+          "risk": 1.2000,
+          "uncertainty": 1.0000,
+          "story_points": 3.1000
+        },
+        {
+          "id": 2,
+          "utility": 13.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.2000,
+          "story_points": 1.5600
+        },
+        {
+          "id": 5,
+          "utility": 38.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.2000,
+          "story_points": 3.4800
+        },
+        {
+          "id": 8,
+          "utility": 96.0000,
+          "risk": 1.2000,
+          "uncertainty": 1.6000,
+          "story_points": 6.0800
+        },
+        {
+          "id": 17,
+          "utility": 39.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.7000,
+          "story_points": 10.7100
+        },
+        {
+          "id": 23,
+          "utility": 93.0000,
+          "risk": 1.9000,
+          "uncertainty": 1.7000,
+          "story_points": 3.0600
+        },
+        {
+          "id": 24,
+          "utility": 99.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.8000,
+          "story_points": 2.5200
+        }
+      ],
+      "used_capacity": 30.5100
+    },
+    {
+      "id": 1,
+      "capacity": 42.5000,
+      "stories": [
+        {
+          "id": 3,
+          "utility": 45.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.3000,
+          "story_points": 4.9400
+        },
+        {
+          "id": 4,
+          "utility": 41.0000,
+          "risk": 1.0000,
+          "uncertainty": 1.1000,
+          "story_points": 3.7400
+        },
+        {
+          "id": 9,
+          "utility": 79.0000,
+          "risk": 2.0000,
+          "uncertainty": 1.4000,
+          "story_points": 9.6600
+        },
+        {
+          "id": 13,
+          "utility": 14.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.9000,
+          "story_points": 6.4600
+        },
+        {
+          "id": 16,
+          "utility": 37.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.2000,
+          "story_points": 4.0800
+        },
+        {
+          "id": 19,
+          "utility": 87.0000,
+          "risk": 1.4000,
+          "uncertainty": 1.4000,
+          "story_points": 6.4400
+        },
+        {
+          "id": 20,
+          "utility": 13.0000,
+          "risk": 1.6000,
+          "uncertainty": 2.0000,
+          "story_points": 6.0000
+        }
+      ],
+      "used_capacity": 41.3200
+    },
+    {
+      "id": 2,
+      "capacity": 45.8000,
+      "stories": [
+        {
+          "id": 0,
+          "utility": 91.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.7000,
+          "story_points": 13.6000
+        },
+        {
+          "id": 11,
+          "utility": 85.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.2000,
+          "story_points": 11.0400
+        },
+        {
+          "id": 12,
+          "utility": 64.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.3000,
+          "story_points": 6.6300
+        },
+        {
+          "id": 18,
+          "utility": 74.0000,
+          "risk": 2.0000,
+          "uncertainty": 1.2000,
+          "story_points": 10.9200
+        }
+      ],
+      "used_capacity": 42.1900
+    },
+    {
+      "id": 3,
+      "capacity": 38.4000,
+      "stories": [
+        {
+          "id": 10,
+          "utility": 21.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.4000,
+          "story_points": 6.4400
+        },
+        {
+          "id": 14,
+          "utility": 13.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.6000,
+          "story_points": 5.1200
+        },
+        {
+          "id": 15,
+          "utility": 21.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.6000,
+          "story_points": 9.7600
+        },
+        {
+          "id": 21,
+          "utility": 81.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.6000,
+          "story_points": 16.0000
+        }
+      ],
+      "used_capacity": 37.3200
+    },
+    {
+      "id": 4,
+      "capacity": 31.3000,
+      "stories": [
+        {
+          "id": 6,
+          "utility": 27.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.1000,
+          "story_points": 10.4500
+        },
+        {
+          "id": 7,
+          "utility": 23.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.3000,
+          "story_points": 11.5700
+        },
+        {
+          "id": 22,
+          "utility": 35.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.6000,
+          "story_points": 8.9600
+        }
+      ],
+      "used_capacity": 30.9800
+    },
+    {
+      "id": 5,
+      "capacity": 37.6000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 6,
+      "capacity": 49.9000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 7,
+      "capacity": 40.6000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 8,
+      "capacity": 49.4000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    }
+  ]
+}
+  ,
+{
+   "name": "stance_06_02.txt",
+   "objective_value": 9896.2000,
+   "number_of_sprints": 9,
+   "sprints": [
+    {
+      "id": 0,
+      "capacity": 34.1000,
+      "stories": [
+        {
+          "id": 0,
+          "utility": 14.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.9000,
+          "story_points": 13.3000
+        },
+        {
+          "id": 1,
+          "utility": 46.0000,
+          "risk": 1.4000,
+          "uncertainty": 1.3000,
+          "story_points": 3.1200
+        },
+        {
+          "id": 2,
+          "utility": 99.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.5000,
+          "story_points": 12.4500
+        },
+        {
+          "id": 6,
+          "utility": 95.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.8000,
+          "story_points": 2.3400
+        },
+        {
+          "id": 7,
+          "utility": 99.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.1000,
+          "story_points": 1.1000
+        }
+      ],
+      "used_capacity": 32.3100
+    },
+    {
+      "id": 1,
+      "capacity": 48.7000,
+      "stories": [
+        {
+          "id": 3,
+          "utility": 28.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.7000,
+          "story_points": 3.4000
+        },
+        {
+          "id": 10,
+          "utility": 86.0000,
+          "risk": 1.0000,
+          "uncertainty": 1.2000,
+          "story_points": 2.5200
+        },
+        {
+          "id": 11,
+          "utility": 73.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.6000,
+          "story_points": 12.1600
+        },
+        {
+          "id": 16,
+          "utility": 83.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.8000,
+          "story_points": 13.5000
+        },
+        {
+          "id": 18,
+          "utility": 89.0000,
+          "risk": 1.9000,
+          "uncertainty": 1.7000,
+          "story_points": 15.9800
+        }
+      ],
+      "used_capacity": 47.5600
+    },
+    {
+      "id": 2,
+      "capacity": 38.1000,
+      "stories": [
+        {
+          "id": 4,
+          "utility": 69.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.2000,
+          "story_points": 6.9600
+        },
+        {
+          "id": 14,
+          "utility": 75.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.1000,
+          "story_points": 9.9000
+        },
+        {
+          "id": 15,
+          "utility": 65.0000,
+          "risk": 1.9000,
+          "uncertainty": 1.5000,
+          "story_points": 6.0000
+        },
+        {
+          "id": 19,
+          "utility": 80.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.0000,
+          "story_points": 7.3000
+        },
+        {
+          "id": 22,
+          "utility": 32.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.1000,
+          "story_points": 4.9500
+        },
+        {
+          "id": 24,
+          "utility": 23.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.1000,
+          "story_points": 1.9800
+        }
+      ],
+      "used_capacity": 37.0900
+    },
+    {
+      "id": 3,
+      "capacity": 43.7000,
+      "stories": [
+        {
+          "id": 5,
+          "utility": 57.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.8000,
+          "story_points": 9.0000
+        },
+        {
+          "id": 12,
+          "utility": 87.0000,
+          "risk": 1.9000,
+          "uncertainty": 2.0000,
+          "story_points": 19.8000
+        },
+        {
+          "id": 21,
+          "utility": 60.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.6000,
+          "story_points": 13.9200
+        }
+      ],
+      "used_capacity": 42.7200
+    },
+    {
+      "id": 4,
+      "capacity": 41.5000,
+      "stories": [
+        {
+          "id": 9,
+          "utility": 68.0000,
+          "risk": 1.4000,
+          "uncertainty": 1.4000,
+          "story_points": 13.7200
+        },
+        {
+          "id": 20,
+          "utility": 65.0000,
+          "risk": 1.9000,
+          "uncertainty": 2.0000,
+          "story_points": 17.2000
+        },
+        {
+          "id": 23,
+          "utility": 17.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.1000,
+          "story_points": 8.1400
+        }
+      ],
+      "used_capacity": 39.0600
+    },
+    {
+      "id": 5,
+      "capacity": 35.2000,
+      "stories": [
+        {
+          "id": 8,
+          "utility": 22.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.6000,
+          "story_points": 14.5600
+        },
+        {
+          "id": 17,
+          "utility": 57.0000,
+          "risk": 1.1000,
+          "uncertainty": 2.0000,
+          "story_points": 11.0000
+        }
+      ],
+      "used_capacity": 25.5600
+    },
+    {
+      "id": 6,
+      "capacity": 41.7000,
+      "stories": [
+        {
+          "id": 13,
+          "utility": 12.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.6000,
+          "story_points": 14.5600
+        }
+      ],
+      "used_capacity": 14.5600
+    },
+    {
+      "id": 7,
+      "capacity": 48.2000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 8,
+      "capacity": 36.5000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    }
+  ]
+}
+  ,
+{
+   "name": "stance_06_03.txt",
+   "objective_value": 9263.7500,
+   "number_of_sprints": 9,
+   "sprints": [
+    {
+      "id": 0,
+      "capacity": 49.9000,
+      "stories": [
+        {
+          "id": 0,
+          "utility": 62.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.8000,
+          "story_points": 3.6000
+        },
+        {
+          "id": 1,
+          "utility": 76.0000,
+          "risk": 1.4000,
+          "uncertainty": 1.8000,
+          "story_points": 5.4000
+        },
+        {
+          "id": 2,
+          "utility": 79.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.4000,
+          "story_points": 10.5000
+        },
+        {
+          "id": 5,
+          "utility": 32.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.8000,
+          "story_points": 12.7800
+        },
+        {
+          "id": 10,
+          "utility": 38.0000,
+          "risk": 1.8000,
+          "uncertainty": 2.0000,
+          "story_points": 2.0000
+        },
+        {
+          "id": 16,
+          "utility": 75.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.9000,
+          "story_points": 4.9400
+        },
+        {
+          "id": 22,
+          "utility": 85.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.6000,
+          "story_points": 8.4800
+        }
+      ],
+      "used_capacity": 47.7000
+    },
+    {
+      "id": 1,
+      "capacity": 45.0000,
+      "stories": [
+        {
+          "id": 4,
+          "utility": 24.0000,
+          "risk": 1.2000,
+          "uncertainty": 1.5000,
+          "story_points": 11.7000
+        },
+        {
+          "id": 6,
+          "utility": 58.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.2000,
+          "story_points": 6.3600
+        },
+        {
+          "id": 7,
+          "utility": 38.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.5000,
+          "story_points": 3.4500
+        },
+        {
+          "id": 8,
+          "utility": 47.0000,
+          "risk": 1.3000,
+          "uncertainty": 2.0000,
+          "story_points": 18.8000
+        },
+        {
+          "id": 14,
+          "utility": 22.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.3000,
+          "story_points": 2.2100
+        }
+      ],
+      "used_capacity": 42.5200
+    },
+    {
+      "id": 2,
+      "capacity": 45.8000,
+      "stories": [
+        {
+          "id": 3,
+          "utility": 99.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.5000,
+          "story_points": 15.0000
+        },
+        {
+          "id": 13,
+          "utility": 11.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.7000,
+          "story_points": 2.7200
+        },
+        {
+          "id": 23,
+          "utility": 61.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.4000,
+          "story_points": 13.7200
+        },
+        {
+          "id": 24,
+          "utility": 98.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.4000,
+          "story_points": 13.7200
+        }
+      ],
+      "used_capacity": 45.1600
+    },
+    {
+      "id": 3,
+      "capacity": 36.6000,
+      "stories": [
+        {
+          "id": 11,
+          "utility": 24.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.6000,
+          "story_points": 10.8800
+        },
+        {
+          "id": 17,
+          "utility": 98.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.6000,
+          "story_points": 9.1200
+        },
+        {
+          "id": 20,
+          "utility": 91.0000,
+          "risk": 2.0000,
+          "uncertainty": 1.3000,
+          "story_points": 12.7400
+        },
+        {
+          "id": 21,
+          "utility": 58.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.9000,
+          "story_points": 2.8500
+        }
+      ],
+      "used_capacity": 35.5900
+    },
+    {
+      "id": 4,
+      "capacity": 46.0000,
+      "stories": [
+        {
+          "id": 12,
+          "utility": 82.0000,
+          "risk": 1.3000,
+          "uncertainty": 2.0000,
+          "story_points": 18.6000
+        },
+        {
+          "id": 18,
+          "utility": 48.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.6000,
+          "story_points": 11.3600
+        },
+        {
+          "id": 19,
+          "utility": 98.0000,
+          "risk": 1.0000,
+          "uncertainty": 1.6000,
+          "story_points": 13.9200
+        }
+      ],
+      "used_capacity": 43.8800
+    },
+    {
+      "id": 5,
+      "capacity": 31.3000,
+      "stories": [
+        {
+          "id": 9,
+          "utility": 13.0000,
+          "risk": 1.9000,
+          "uncertainty": 1.7000,
+          "story_points": 12.9200
+        },
+        {
+          "id": 15,
+          "utility": 30.0000,
+          "risk": 1.2000,
+          "uncertainty": 1.0000,
+          "story_points": 4.9000
+        }
+      ],
+      "used_capacity": 17.8200
+    },
+    {
+      "id": 6,
+      "capacity": 39.8000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 7,
+      "capacity": 38.0000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 8,
+      "capacity": 36.0000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    }
+  ]
+}
+  ,
+{
+   "name": "stance_06_04.txt",
+   "objective_value": 9848.4250,
+   "number_of_sprints": 9,
+   "sprints": [
+    {
+      "id": 0,
+      "capacity": 47.1000,
+      "stories": [
+        {
+          "id": 9,
+          "utility": 71.0000,
+          "risk": 1.0000,
+          "uncertainty": 1.6000,
+          "story_points": 1.9200
+        },
+        {
+          "id": 10,
+          "utility": 11.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.1000,
+          "story_points": 10.8900
+        },
+        {
+          "id": 14,
+          "utility": 49.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.5000,
+          "story_points": 3.9000
+        },
+        {
+          "id": 16,
+          "utility": 14.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.8000,
+          "story_points": 2.8800
+        },
+        {
+          "id": 17,
+          "utility": 89.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.3000,
+          "story_points": 2.3400
+        },
+        {
+          "id": 20,
+          "utility": 44.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.3000,
+          "story_points": 10.6600
+        },
+        {
+          "id": 22,
+          "utility": 37.0000,
+          "risk": 1.4000,
+          "uncertainty": 1.9000,
+          "story_points": 13.3000
+        }
+      ],
+      "used_capacity": 45.8900
+    },
+    {
+      "id": 1,
+      "capacity": 48.0000,
+      "stories": [
+        {
+          "id": 1,
+          "utility": 63.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.2000,
+          "story_points": 7.9200
+        },
+        {
+          "id": 2,
+          "utility": 72.0000,
+          "risk": 1.1000,
+          "uncertainty": 1.7000,
+          "story_points": 8.6700
+        },
+        {
+          "id": 7,
+          "utility": 12.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.6000,
+          "story_points": 15.3600
+        },
+        {
+          "id": 15,
+          "utility": 93.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.6000,
+          "story_points": 4.6400
+        },
+        {
+          "id": 19,
+          "utility": 27.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.0000,
+          "story_points": 9.8000
+        }
+      ],
+      "used_capacity": 46.3900
+    },
+    {
+      "id": 2,
+      "capacity": 43.0000,
+      "stories": [
+        {
+          "id": 3,
+          "utility": 42.0000,
+          "risk": 1.0000,
+          "uncertainty": 1.4000,
+          "story_points": 3.9200
+        },
+        {
+          "id": 4,
+          "utility": 20.0000,
+          "risk": 1.3000,
+          "uncertainty": 1.2000,
+          "story_points": 4.0800
+        },
+        {
+          "id": 5,
+          "utility": 48.0000,
+          "risk": 1.4000,
+          "uncertainty": 1.4000,
+          "story_points": 4.4800
+        },
+        {
+          "id": 8,
+          "utility": 19.0000,
+          "risk": 1.4000,
+          "uncertainty": 1.6000,
+          "story_points": 4.8000
+        },
+        {
+          "id": 12,
+          "utility": 46.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.9000,
+          "story_points": 6.4600
+        },
+        {
+          "id": 18,
+          "utility": 18.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.2000,
+          "story_points": 8.6400
+        },
+        {
+          "id": 21,
+          "utility": 29.0000,
+          "risk": 1.5000,
+          "uncertainty": 1.4000,
+          "story_points": 3.5000
+        },
+        {
+          "id": 23,
+          "utility": 64.0000,
+          "risk": 1.2000,
+          "uncertainty": 1.0000,
+          "story_points": 6.9000
+        }
+      ],
+      "used_capacity": 42.7800
+    },
+    {
+      "id": 3,
+      "capacity": 35.5000,
+      "stories": [
+        {
+          "id": 0,
+          "utility": 44.0000,
+          "risk": 1.6000,
+          "uncertainty": 1.8000,
+          "story_points": 13.3200
+        },
+        {
+          "id": 6,
+          "utility": 53.0000,
+          "risk": 1.7000,
+          "uncertainty": 1.4000,
+          "story_points": 9.2400
+        },
+        {
+          "id": 13,
+          "utility": 25.0000,
+          "risk": 1.9000,
+          "uncertainty": 1.6000,
+          "story_points": 8.4800
+        }
+      ],
+      "used_capacity": 31.0400
+    },
+    {
+      "id": 4,
+      "capacity": 45.3000,
+      "stories": [
+        {
+          "id": 11,
+          "utility": 24.0000,
+          "risk": 1.8000,
+          "uncertainty": 1.5000,
+          "story_points": 9.6000
+        },
+        {
+          "id": 24,
+          "utility": 19.0000,
+          "risk": 1.2000,
+          "uncertainty": 1.9000,
+          "story_points": 14.0600
+        }
+      ],
+      "used_capacity": 23.6600
+    },
+    {
+      "id": 5,
+      "capacity": 47.7000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 6,
+      "capacity": 33.3000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 7,
+      "capacity": 40.5000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    },
+    {
+      "id": 8,
+      "capacity": 30.6000,
+      "stories": [
+
+      ],
+      "used_capacity": 0.0000
+    }
+  ]
+}
+  ]
+}
