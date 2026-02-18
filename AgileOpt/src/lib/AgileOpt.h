@@ -106,6 +106,7 @@ public:
 	int AgileOpt::Optimize(int select_method, char* fname);
 	int AgileOpt::Optimize2(int select_method, char* fname);
 	int AgileOpt::OptimizeHeu(int select_method, char* fname);
+	int AgileOpt::OptimizeHeu2(int select_method, char* fname);
 	int AgileOpt::OptimizeHeu_Improved(int select_method, char* fname);
 	int AgileOpt::OptimizeLagrHeu(int select_method, char* fname);
 };

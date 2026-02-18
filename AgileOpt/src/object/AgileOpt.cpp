@@ -2399,6 +2399,586 @@ int AgileOpt::OptimizeHeu(int select_method, char* fname)
 	return 0;
 }
 
+
+
+int AgileOpt::OptimizeHeu2(int select_method, char* fname)
+{
+	long i, j, k, h, j1, kk;
+	long kount;
+	double obj;
+	double ptot;
+	double objtot;
+	double objval;
+	long nYMap;
+	long* YMap;
+	long* Flag;
+
+	double zheu;
+
+	// Initialize the emerging heuristic solution
+	Zheu = 0.0;
+	objval = 0.0;
+	printf("\n\nSoluzione: \n\n");
+
+	// Auxiliary array to map variables "yij"
+	Flag = new long[n];
+	YMap = new long[n];
+	nYMap = 0;
+	for (j = 0; j < n; j++)
+	{
+		Flag[j] = 0;
+		if ((nY[j] > 1) && (a[j] > Prec))
+			//if (a[j]>-Inf)
+		{
+			YMap[j] = nYMap;
+			nYMap++;
+		}
+		else
+			YMap[j] = -1;
+	}
+
+
+	// Initialize SprintAssign matrix (m x n)
+	int** SprintAssign = new int* [m];
+	for (i = 0; i < m; i++)
+	{
+		SprintAssign[i] = new int[n];
+		for (j = 0; j < n; j++)
+			SprintAssign[i][j] = 0;
+	}
+
+	CplexObj LP;
+
+	for (i = 0; i < m; i++)
+	{
+		// LP local into the loop body
+
+		// Set problem size
+		LP.ncols = n + nYMap + 1;
+		LP.nrows = 1 + 2 * nYMap;  // OR/AND constraints are added later
+		LP.nz = (n) * (2 + n) + (nYMap) * (1 + n);  // We overestimate |Yj|=n
+		if (cfg.Sentinel)
+		{
+			LP.ncols += 1;
+			LP.nrows += 1;
+			LP.nz += n + 1;
+		}
+		LP.MallocCols();
+
+		// Load Columns/Variables xj in the Cplex data structure
+		k = 0;
+		kount = 0;
+		for (j = 0; j < n; j++)
+		{
+			//k = i*n+j;
+			int depsReady = 0;
+			double ratio = 0.0;
+			if (nY[j] == 0) {
+				ratio = 1.0;
+			}
+			else {
+				for (int h = 0; h < nY[j]; h++) {
+					int dep = Y[j][h];
+					if (Flag[dep] == 1) {
+						depsReady++;
+					}
+				}
+				ratio = (double)depsReady / nY[j];
+			}
+			double depPenalty = 0.25 + 0.75 * ratio;
+
+			// Conta quante storie j sblocca
+			int unlocks = 0;
+			for (int k2 = 0; k2 < n; k2++) {
+				for (int h = 0; h < nY[k2]; h++) {
+					if (Y[k2][h] == j)
+						unlocks++;
+				}
+			}
+			double unlockBonus = 0.5 * unlocks;
+			//k = i*n+j;
+			switch (select_method)
+			{
+			case 1:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+				break;
+			case 2:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j] * depPenalty + unlockBonus;
+				break;
+			case 3:
+				LP.obj[k] = (original_m - i) * u[j] * run[j];
+				break;
+			case 4:
+				LP.obj[k] = (original_m - i) * u[j] * run[j] * depPenalty + unlockBonus;
+				break;
+			case 5:
+				LP.obj[k] = (original_m - i) * p[j];
+				break;
+			case 6:
+				LP.obj[k] = (original_m - i) * p[j] * depPenalty + unlockBonus;
+				break;
+			default:
+				LP.obj[k] = (original_m - i) * u[j] * rcr[j];
+			}
+
+			LP.matbeg[k] = kount;
+
+			// Knapsack Constraint
+			LP.matind[kount] = 0;
+			// LP.matval[kount] = p[j]*run[j]; // or pr[j]
+			LP.matval[kount] = pr[j];
+			kount++;
+
+
+
+			// Linking Constraints xj and yj
+			for (h = 0; h < nY[j]; h++)
+			{
+				j1 = Y[j][h];
+				if ((YMap[j1] >= 0) && (j1 != j))
+				{
+					LP.matind[kount] = 1 + YMap[j1];
+					LP.matval[kount] = -1.;
+					kount++;
+				}
+			}
+
+			if (YMap[j] >= 0)
+			{
+				LP.matind[kount] = 1 + nYMap + YMap[j];
+				LP.matval[kount] = -(double)(nY[j] - 1);
+				kount++;
+			}
+
+			// Sentinel Constraint
+			if (cfg.Sentinel)
+			{
+				LP.matind[kount] = 1 + 2 * nYMap;
+				LP.matval[kount] = 1.0;
+				kount++;
+			}
+
+			LP.matcnt[k] = kount - LP.matbeg[k];
+
+			LP.indices[k] = k;
+			LP.priority[k] = 0;  // prima 1
+			LP.direction[k] = CPX_BRANCH_GLOBAL;
+			//LP.direction[k] = CPX_BRANCH_DOWN;
+			LP.xctype[k] = 'B';
+
+			LP.lb[k] = 0.0;
+			if (Flag[j] == 0)
+				LP.ub[k] = 1.0;
+			else
+				LP.ub[k] = 0.0;
+			k++;
+		}
+		// ===== Variabile xi (numero di sprint accorpati) =====
+		LP.obj[k] = 0.0;        // nessuna penalità
+
+		LP.matbeg[k] = kount;
+
+		// coefficiente nel vincolo di capacità
+		LP.matind[kount] = 0;   // riga del vincolo capacità
+		LP.matval[kount] = - pmax[0];
+		kount++;
+
+		LP.matcnt[k] = kount - LP.matbeg[k];
+
+		LP.indices[k] = k;
+		LP.priority[k] = 0;
+		LP.direction[k] = CPX_BRANCH_GLOBAL;
+
+		// può essere continua o intera
+		LP.xctype[k] = 'I';     // oppure 'C'
+
+		LP.lb[k] = 0.0;         // oppure 1.0 se vuoi almeno uno sprint
+		LP.ub[k] = 1000.0;      // limite grande
+
+		k++;
+
+
+		// Load Columns/Variables yij in the Cplex data structure
+		kk = 0;
+		for (j = 0; j < n; j++)
+		{
+			if (YMap[kk] < 0)
+			{
+				kk++;
+				continue;
+			}
+
+			//k = i*n+j;
+			if (nY[j] < 2)
+				LP.obj[k] = 0.0;
+			else
+				LP.obj[k] = (original_m - i) * u[j] * a[j] / (nY[j] - 1);
+			// LP.obj[k] = a[j]/(nY[j]-1);
+
+			LP.matbeg[k] = kount;
+
+			LP.matind[kount] = 1 + YMap[kk];
+			LP.matval[kount] = +1.0;
+			kount++;
+
+			LP.matind[kount] = 1 + nYMap + YMap[kk];
+			LP.matval[kount] = +1.0;
+			kount++;
+
+			LP.matcnt[k] = kount - LP.matbeg[k];
+
+			LP.indices[k] = k;
+			LP.priority[k] = 0; // Prima 0
+			LP.direction[k] = CPX_BRANCH_GLOBAL;
+			LP.xctype[k] = 'C';
+			//LP.xctype[k] = 'I';
+
+			LP.lb[k] = 0.0;
+			LP.ub[k] = (double)n;
+			k++;
+			kk++;
+		}
+
+		if (cfg.Sentinel)
+		{
+			// Load Columns/Variables related to Sentinel constraints in the Cplex data structure
+			kk = 0;
+
+			LP.obj[k] = 0.0;
+
+			LP.matbeg[k] = kount;
+
+			LP.matind[kount] = 1 + 2 * nYMap;
+			LP.matval[kount] = -1.0;
+			kount++;
+
+			LP.matcnt[k] = kount - LP.matbeg[k];
+
+			LP.indices[k] = k;
+			LP.priority[k] = 1000; // Prima 0
+			LP.direction[k] = CPX_BRANCH_GLOBAL;
+			//LP.direction[k] = CPX_BRANCH_DOWN;
+			LP.xctype[k] = 'I';
+
+			LP.lb[k] = 0.0;
+			LP.ub[k] = (double)n;
+			k++;
+			kk++;
+		}
+
+		LP.matbeg[k] = kount;
+
+		// Load Constraints in the Cplex data structure
+		kount = 0;
+		LP.rhs[kount] = 0.0;
+		LP.sense[kount] = 'L';
+		kount++;
+
+		for (k = 0; k < nYMap; k++)
+		{
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
+			kount++;
+		}
+
+		for (k = 0; k < nYMap; k++)
+		{
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'L';
+			kount++;
+		}
+
+		if (cfg.Sentinel)
+		{
+			LP.rhs[kount] = 0.0;
+			LP.sense[kount] = 'E';
+			kount++;
+		}
+
+		// Maximization problem
+		LP.minmax = -1;
+
+		// Load Problem
+		LP.CopyLP();
+
+		// Set MIP
+		LP.SetMIP(cfg.TimeLimit);
+
+		// Setup Custom Cutting Plane
+		LP.CuttingPlaneHeu(n, m, ur, pr, pmax, nY, Y, nUOR, UOR, nUAND, UAND, Flag, FDepP, cfg.Pred, cfg.Cover, cfg.Lifting, cfg.KnapSol, cfg.MaxCuts, &Cuts, 0);
+
+		// Optimize
+		LP.SolveMIP(&zheu, &Gap, &Nodes, &Cuts);
+
+		Zheu += zheu;
+
+		// Read the solution
+		ptot = 0.0;
+		objtot = 0.0;
+		printf("Sprint %d (pmax=%lf): ", i, pmax[i]);
+
+		// Variables xj
+		for (j = 0; j < n; j++)
+		{
+			if (LP.xt[j] > 0.001)
+			{
+				Flag[j] = 1;
+				ptot += p[j] * run[j];
+				objtot += LP.obj[j];
+				//printf("%d ",j);
+				printf("%d (%.1lf) ", j, pr[j]);
+				SprintAssign[i][j] = 1;
+			}
+		}
+
+		// Variables yij
+		kk = n;
+		for (j = 0; j < n; j++)
+		{
+			if (YMap[j] < 0)
+				continue;
+
+			if (LP.xt[kk] > 0.001)
+			{
+				objtot += LP.obj[kk];
+			}
+			kk++;
+		}
+
+		objval += objtot;
+		printf("\n  ptot=%lf    objtot=%lf\n", ptot, objtot);
+
+	}
+
+
+	char filename[128];
+	sprintf(filename, "solutionHeu%d.json", select_method);
+
+	bool exists = file_exists(filename);
+	FILE* json = nullptr;
+
+	if (!exists)
+	{
+		json = fopen(filename, "w");
+		fprintf(json, "{\n  \"solutions\": [\n");
+	}
+	else
+	{
+		// Leggi tutto il file
+		FILE* in = fopen(filename, "r");
+		fseek(in, 0, SEEK_END);
+		long len = ftell(in);
+		rewind(in);
+
+		char* buffer = new char[len + 1];
+		fread(buffer, 1, len, in);
+		buffer[len] = '\0';
+		fclose(in);
+
+		// Rimuove l'ultima ']'
+		char* last_bracket = strrchr(buffer, ']');
+		if (last_bracket)
+			*last_bracket = '\0';
+
+		json = fopen(filename, "w");
+		fprintf(json, "%s,\n", buffer);
+
+		delete[] buffer;
+	}
+
+	fprintf(json,
+		"{\n"
+		"   \"name\": \"%s\",\n"
+		"   \"objective_value\": %.4f,\n"
+		"   \"number_of_sprints\": %ld,\n"
+		"   \"sprints\": [\n",
+		fname, Zheu, m
+	);
+
+
+	NSprintsUsed = 0;
+	PercentageUtilization = 0;
+	DeviationRisk = 0.0;
+	DeviationUncertaintyRisk = 0.0;
+	HalfUtilitiSprint = -1;
+	UncertaintyMin = 0.0;
+	UncertaintyMax = 0.0;
+	RiskMax = 0.0;
+	RiskMin = 0.0;
+	double* sprint_risks = new double[m];
+	double* sprint_uncertainties = new double[m];
+	for (i = 0; i < m; i++) {
+		sprint_risks[i] = 0.0;
+		sprint_uncertainties[i] = 0.0;
+	}
+
+	double halftotal_utility = 0.0;
+	for (j = 0; j < n; j++)
+		halftotal_utility += u[j];
+	halftotal_utility /= 2.0;
+
+	int count = 0;
+	for (i = 0; i < m; i++)
+	{
+		double sprint_utilization = 0.0;
+
+		double avg_sprint_risk = 0.0;
+		double avg_sprint_uncertainty = 0.0;
+		double un = 0.0;
+		double risk = 0.0;
+		int nn = 0;
+
+		fprintf(json,
+			"    {\n"
+			"      \"id\": %ld,\n"
+			"      \"capacity\": %.4f,\n"
+			"      \"stories\": [\n",
+			i, pmax[i]
+		);
+
+		bool first_story = true;
+
+		// Variables xij
+		for (j = 0; j < n; j++)
+		{
+
+			if (SprintAssign[i][j])
+			{
+				sprint_utilization += pr[j];
+				printf("%d (%.1lf) ", j, pr[j]);
+				avg_sprint_risk += rcr[j];
+				avg_sprint_uncertainty += run[j];
+				halftotal_utility -= u[j];
+				nn++;
+				un += run[j];
+				risk += rcr[j];
+				printf(" [u=%lf rcr=%lf run=%lf] ", u[j], rcr[j], run[j]);
+
+				if (!first_story)
+					fprintf(json, ",\n");
+				first_story = false;
+
+				fprintf(json,
+					"        {\n"
+					"          \"id\": %ld,\n"
+					"          \"utility\": %.4f,\n"
+					"          \"risk\": %.4f,\n"
+					"          \"uncertainty\": %.4f,\n"
+					"          \"story_points\": %.4f\n"
+					"        }",
+					j, u[j], rcr[j], run[j], pr[j]
+				);
+			}
+			k++;
+		}
+		avg_sprint_risk /= (double)(nn > 0 ? nn : 1);
+		avg_sprint_uncertainty /= (double)(nn > 0 ? nn : 1);
+		sprint_risks[i] = avg_sprint_risk;
+		sprint_uncertainties[i] = avg_sprint_uncertainty;
+		if (risk > RiskMax)
+			RiskMax = risk;
+		if ((risk < RiskMin && risk > 0.0) || RiskMin == 0.0)
+			RiskMin = risk;
+		if (un > UncertaintyMax)
+			UncertaintyMax = un;
+		if ((un < UncertaintyMin && un > 0.0) || UncertaintyMin == 0.0)
+			UncertaintyMin = un;
+		if (sprint_utilization > 0.0) {
+			PercentageUtilization += sprint_utilization / pmax[i];
+			count++;
+			NSprintsUsed++;
+		}
+		if (halftotal_utility <= 0.0 && HalfUtilitiSprint < 0) {
+			HalfUtilitiSprint = NSprintsUsed;
+		}
+
+		fprintf(json,
+			"\n      ],\n"
+			"      \"used_capacity\": %.4f\n"
+			"    }",
+			sprint_utilization
+		);
+
+		if (i < m - 1)
+			fprintf(json, ",");
+
+		fprintf(json, "\n");
+
+	}
+
+	fprintf(json,
+		"  ]\n"
+		"}\n"
+	);
+	fprintf(json,
+		"  ]\n"
+		"}\n"
+	);
+
+	fclose(json);
+
+	double mean_risk = 0.0;
+	double mean_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		mean_risk += sprint_risks[i];
+		mean_uncertainty += sprint_uncertainties[i];
+	}
+
+	if (NSprintsUsed > 0) {
+		mean_risk /= NSprintsUsed;
+		mean_uncertainty /= NSprintsUsed;
+	}
+
+	double var_risk = 0.0;
+	double var_uncertainty = 0.0;
+
+	for (i = 0; i < NSprintsUsed; i++) {
+		double dr = sprint_risks[i] - mean_risk;
+		double du = sprint_uncertainties[i] - mean_uncertainty;
+
+		var_risk += dr * dr;
+		var_uncertainty += du * du;
+	}
+
+	if (NSprintsUsed > 0) {
+		DeviationRisk = sqrt(var_risk / NSprintsUsed);
+		DeviationUncertaintyRisk = sqrt(var_uncertainty / NSprintsUsed);
+	}
+	else {
+		DeviationRisk = 0.0;
+		DeviationUncertaintyRisk = 0.0;
+	}
+
+	delete[] sprint_risks;
+	delete[] sprint_uncertainties;
+
+	PercentageUtilization /= (double)count;
+
+	printf("\n risk min=%lf max=%lf", RiskMin, RiskMax);
+	printf("\n uncertainty min=%lf max=%lf", UncertaintyMin, UncertaintyMax);
+	printf("\n Number of Occupied Sprints: %ld", NSprintsUsed);
+	printf("\n Average Sprint Utilization: %lf", PercentageUtilization);
+	printf("\n Sprint Risk Standard Deviation: %lf", DeviationRisk);
+	printf("\n Sprint Uncertainty Standard Deviation: %lf", DeviationUncertaintyRisk);
+	if (HalfUtilitiSprint >= 0)
+		printf("\n Sprint where Half of Total Utility is achieved: %ld", HalfUtilitiSprint);
+	else
+		printf("\n Half of Total Utility is not achieved in any sprint.");
+
+
+
+	printf("\n  Zheu=%lf\n", Zheu);
+
+	// Free auxiliary data structures
+	delete[] Flag;
+	delete[] YMap;
+
+	return 0;
+}
+
+
+
 int AgileOpt::OptimizeHeu_Improved(int select_method, char* fname)
 {
 	long i, j, k, h, j1, kk;
